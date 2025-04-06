@@ -1,8 +1,48 @@
-import { handler } from '../../../slack-event-handler';
+// モックを変数に入れて先に定義
+const mockSlackFunctions = {
+  getSlackChannelMembers: jest.fn().mockResolvedValue(['user1', 'user2']),
+  sendSlackMessage: jest.fn(),
+  sendSlackEphemeralMessage: jest.fn()
+};
+
+const mockMatchingService = {
+  getInstance: jest.fn().mockReturnValue({
+    matchUsers: jest.fn().mockResolvedValue([['user1', 'user2']]),
+    updateUserScore: jest.fn()
+  })
+};
+
+const mockHuddleService = {
+  getInstance: jest.fn().mockReturnValue({
+    createHuddle: jest.fn().mockResolvedValue(undefined)
+  })
+};
+
+// モックをインポートより前に設定
+jest.mock('../../utils/slack', () => mockSlackFunctions);
+jest.mock('../../services/matching/matchingService', () => ({
+  MatchingService: mockMatchingService
+}));
+jest.mock('../../services/huddle/huddleService', () => ({
+  HuddleService: mockHuddleService
+}));
+
+import { handler } from '../../slack-event-handler';
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import { ValidationError } from '../../../utils/errors';
 
 describe('Slack Event Handler', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    process.env.SLACK_BOT_TOKEN = 'xoxb-test-token';
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
   describe('URL Verification', () => {
     it('should handle URL verification challenge', async () => {
       const event: APIGatewayProxyEvent = {
@@ -68,8 +108,19 @@ describe('Slack Event Handler', () => {
 
   describe('Error Handling', () => {
     it('should handle missing request body', async () => {
-      const event: APIGatewayProxyEvent = {
-        body: undefined,
+      const event = {
+        body: null,
+        headers: {},
+        multiValueHeaders: {},
+        httpMethod: 'POST',
+        isBase64Encoded: false,
+        path: '/',
+        pathParameters: null,
+        queryStringParameters: null,
+        multiValueQueryStringParameters: null,
+        stageVariables: null,
+        requestContext: {} as any,
+        resource: '',
       } as APIGatewayProxyEvent;
 
       const result = await handler(event);

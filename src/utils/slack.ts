@@ -1,5 +1,6 @@
 import { WebClient } from '@slack/web-api';
-import { SlackUser, SlackChannel } from '../types/slack';
+import { SlackUser, SlackChannel, SlackMessage } from '../types/slack';
+import { SlackApiError } from './errors';
 
 const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 
@@ -13,26 +14,67 @@ export async function getSlackChannelInfo(channelId: string): Promise<SlackChann
   return result.channel as SlackChannel;
 }
 
-export async function getSlackChannelMembers(channelId: string): Promise<string[]> {
-  const result = await slack.conversations.members({ channel: channelId });
-  return result.members as string[];
+export async function getSlackClient(): Promise<WebClient> {
+  const token = process.env.SLACK_BOT_TOKEN;
+  if (!token) {
+    throw new SlackApiError('Missing Slack bot token');
+  }
+  return new WebClient(token);
 }
 
-export async function sendSlackMessage(channelId: string, message: string): Promise<void> {
-  await slack.chat.postMessage({
-    channel: channelId,
-    text: message,
-  });
+export async function getSlackChannelMembers(channelId: string): Promise<string[]> {
+  try {
+    const client = await getSlackClient();
+    const response = await client.conversations.members({
+      channel: channelId,
+    });
+
+    if (!response.members || !response.ok) {
+      throw new SlackApiError('Failed to get channel members', response);
+    }
+
+    return response.members;
+  } catch (error) {
+    throw new SlackApiError('Error getting channel members', error);
+  }
+}
+
+export async function sendSlackMessage(channelId: string, message: string | SlackMessage): Promise<void> {
+  try {
+    const client = await getSlackClient();
+
+    const payload = typeof message === 'string'
+      ? { text: message, channel: channelId }
+      : { ...message, channel: channelId };
+
+    const response = await client.chat.postMessage(payload);
+
+    if (!response.ok) {
+      throw new SlackApiError('Failed to send message', response);
+    }
+  } catch (error) {
+    throw new SlackApiError('Error sending message', error);
+  }
 }
 
 export async function sendSlackEphemeralMessage(
   channelId: string,
   userId: string,
-  message: string
+  message: string | SlackMessage
 ): Promise<void> {
-  await slack.chat.postEphemeral({
-    channel: channelId,
-    user: userId,
-    text: message,
-  });
+  try {
+    const client = await getSlackClient();
+
+    const payload = typeof message === 'string'
+      ? { text: message, channel: channelId, user: userId }
+      : { ...message, channel: channelId, user: userId };
+
+    const response = await client.chat.postEphemeral(payload);
+
+    if (!response.ok) {
+      throw new SlackApiError('Failed to send ephemeral message', response);
+    }
+  } catch (error) {
+    throw new SlackApiError('Error sending ephemeral message', error);
+  }
 } 

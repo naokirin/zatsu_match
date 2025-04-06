@@ -1,5 +1,5 @@
-import { loadConfig, validateConfig, ConfigError } from './config';
-import { LogLevel } from './logger';
+import { loadConfig, validateConfig } from './config';
+import { ConfigError } from './errors';
 
 describe('Config', () => {
   const originalEnv = process.env;
@@ -14,14 +14,15 @@ describe('Config', () => {
 
   describe('loadConfig', () => {
     it('should load default values when no environment variables are set', () => {
+      process.env.SLACK_BOT_TOKEN = 'xoxb-test-token';
+
       const config = loadConfig();
       expect(config).toEqual({
         slack: {
-          botToken: '',
-          signingSecret: '',
+          botToken: 'xoxb-test-token',
         },
         logging: {
-          level: LogLevel.INFO,
+          level: 'info',
         },
         matching: {
           minMembers: 2,
@@ -36,8 +37,7 @@ describe('Config', () => {
 
     it('should load values from environment variables', () => {
       process.env.SLACK_BOT_TOKEN = 'xoxb-test-token';
-      process.env.SLACK_SIGNING_SECRET = 'test-secret';
-      process.env.LOG_LEVEL = LogLevel.DEBUG;
+      process.env.LOG_LEVEL = 'debug';
       process.env.MIN_MEMBERS = '3';
       process.env.MAX_MEMBERS = '5';
       process.env.CHANNEL_PREFIX = 'test-';
@@ -47,10 +47,9 @@ describe('Config', () => {
       expect(config).toEqual({
         slack: {
           botToken: 'xoxb-test-token',
-          signingSecret: 'test-secret',
         },
         logging: {
-          level: LogLevel.DEBUG,
+          level: 'debug',
         },
         matching: {
           minMembers: 3,
@@ -73,10 +72,10 @@ describe('Config', () => {
       const config = {
         slack: {
           botToken: 'xoxb-test-token',
-          signingSecret: 'test-secret',
+          signingScret: 'test-secret',
         },
         logging: {
-          level: LogLevel.INFO,
+          level: 'info' as 'info' | 'debug' | 'warn' | 'error',
         },
         matching: {
           minMembers: 2,
@@ -95,10 +94,9 @@ describe('Config', () => {
       const config = {
         slack: {
           botToken: '',
-          signingSecret: 'test-secret',
         },
         logging: {
-          level: LogLevel.INFO,
+          level: 'info' as 'info' | 'debug' | 'warn' | 'error',
         },
         matching: {
           minMembers: 2,
@@ -117,10 +115,9 @@ describe('Config', () => {
       const config = {
         slack: {
           botToken: 'xoxb-test-token',
-          signingSecret: 'test-secret',
         },
         logging: {
-          level: LogLevel.INFO,
+          level: 'info' as 'info' | 'debug' | 'warn' | 'error',
         },
         matching: {
           minMembers: 5,

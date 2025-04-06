@@ -1,13 +1,12 @@
 import { Config, ConfigValidationError } from '../types/config';
-import { LogLevel } from './logger';
+import { ConfigError } from './errors';
 
 const DEFAULT_CONFIG: Config = {
   slack: {
     botToken: '',
-    signingSecret: '',
   },
   logging: {
-    level: LogLevel.INFO,
+    level: 'info',
   },
   matching: {
     minMembers: 2,
@@ -18,13 +17,6 @@ const DEFAULT_CONFIG: Config = {
     isPrivate: true,
   },
 };
-
-export class ConfigError extends Error {
-  constructor(public readonly errors: ConfigValidationError[]) {
-    super('Configuration validation failed');
-    this.name = 'ConfigError';
-  }
-}
 
 export function loadConfig(): Config {
   const config = { ...DEFAULT_CONFIG };
@@ -41,19 +33,9 @@ export function loadConfig(): Config {
     config.slack.botToken = botToken;
   }
 
-  const signingSecret = process.env.SLACK_SIGNING_SECRET;
-  if (!signingSecret) {
-    errors.push({
-      field: 'SLACK_SIGNING_SECRET',
-      message: 'Slack signing secret is required',
-    });
-  } else {
-    config.slack.signingSecret = signingSecret;
-  }
-
   // Logging configuration
-  const logLevel = process.env.LOG_LEVEL as LogLevel;
-  if (logLevel && Object.values(LogLevel).includes(logLevel)) {
+  const logLevel = process.env.LOG_LEVEL as Config['logging']['level'];
+  if (logLevel && ['debug', 'info', 'warn', 'error'].includes(logLevel)) {
     config.logging.level = logLevel;
   }
 
@@ -92,13 +74,6 @@ export function validateConfig(config: Config): void {
     errors.push({
       field: 'slack.botToken',
       message: 'Slack bot token is required',
-    });
-  }
-
-  if (!config.slack.signingSecret) {
-    errors.push({
-      field: 'slack.signingSecret',
-      message: 'Slack signing secret is required',
     });
   }
 

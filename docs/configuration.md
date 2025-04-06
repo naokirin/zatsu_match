@@ -7,7 +7,6 @@
 | 環境変数名             | 説明                                                  | デフォルト値 |
 | ---------------------- | ----------------------------------------------------- | ------------ |
 | `SLACK_BOT_TOKEN`      | Slackボットのトークン（`xoxb-`で始まる）              | -            |
-| `SLACK_SIGNING_SECRET` | Slackからのリクエストを検証するための署名シークレット | -            |
 
 ## オプションの環境変数
 
@@ -36,7 +35,6 @@
 ```bash
 # 必須の環境変数
 SLACK_BOT_TOKEN=xoxb-your-bot-token
-SLACK_SIGNING_SECRET=your-signing-secret
 
 # オプションの環境変数
 LOG_LEVEL=DEBUG
@@ -48,7 +46,7 @@ HUDDLE_PRIVATE=false
 
 ## バリデーションルール
 
-1. `SLACK_BOT_TOKEN`と`SLACK_SIGNING_SECRET`は必須です
+1. `SLACK_BOT_TOKEN`は必須です
 2. `LOG_LEVEL`は`DEBUG`、`INFO`、`WARN`、`ERROR`のいずれかである必要があります
 3. `MIN_MEMBERS`は0より大きい数値である必要があります
 4. `MAX_MEMBERS`は`MIN_MEMBERS`以上である必要があります

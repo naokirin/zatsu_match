@@ -1,12 +1,9 @@
-import { LogLevel } from '../utils/logger';
-
 export interface Config {
   slack: {
     botToken: string;
-    signingSecret: string;
   };
   logging: {
-    level: LogLevel;
+    level: 'debug' | 'info' | 'warn' | 'error';
     logDir?: string;
     maxFileSize?: number;
     maxFiles?: number;

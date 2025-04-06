@@ -2,10 +2,9 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { handleSlackEvent } from './eventHandler';
 import { handleSlackCommand } from './commandHandler';
 import { SlackEvent, SlackCommand } from '../types/slack';
-import { SlackError, ValidationError } from '../utils/errors';
-import { Logger } from '../utils/logger';
+import { SlackError, ValidationError, ConfigError } from '../utils/errors';
 import { generateTraceId, getTraceIdFromEvent } from '../utils/trace';
-import { loadConfig, validateConfig, ConfigError } from '../utils/config';
+import { loadConfig, validateConfig } from '../utils/config';
 
 interface SlackUrlVerification {
   type: 'url_verification';
@@ -29,12 +28,10 @@ export async function handler(
       validateConfig(config);
     }
 
-    const logger = Logger.getInstance();
-
-    logger.info('Received request', { ...context, event });
+    console.info('Received request', { ...context, event });
 
     if (!event.body) {
-      logger.warn('Missing request body', context);
+      console.warn('Missing request body', context);
       throw new ValidationError('Missing request body');
     }
 
@@ -42,36 +39,35 @@ export async function handler(
 
     // URL Verification
     if (isUrlVerification(body)) {
-      logger.debug('Handling URL verification', context);
+      console.debug('Handling URL verification', context);
       return createSuccessResponse({ challenge: body.challenge });
     }
 
     // Handle Slack Events
     if (isEventCallback(body)) {
-      logger.info('Handling event callback', { ...context, eventType: body.event.type });
+      console.info('Handling event callback', { ...context, eventType: body.event.type });
       await handleSlackEvent(body, context);
       return createSuccessResponse({ message: 'Event processed successfully' });
     }
 
     // Handle Slack Commands
     if (isCommandRequest(body)) {
-      logger.info('Handling command request', { ...context, command: body.command });
+      console.info('Handling command request', { ...context, command: body.command });
       await handleSlackCommand(body, context);
       return createSuccessResponse({ message: 'Command processed successfully' });
     }
 
-    logger.warn('Invalid request type', context);
+    console.warn('Invalid request type', context);
     throw new ValidationError('Invalid request type');
   } catch (error) {
-    const logger = Logger.getLogger();
-    logger.error('Error processing request', error as Error, { traceId: context.traceId });
+    console.error('Error processing request', error as Error, { traceId: context.traceId });
 
     if (error instanceof ConfigError) {
       return {
         statusCode: 500,
         body: JSON.stringify({
           error: 'Configuration error',
-          details: error.errors,
+          details: (error as ConfigError).errors,
         }),
       };
     }

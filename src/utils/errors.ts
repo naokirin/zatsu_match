@@ -28,4 +28,22 @@ export class CommandError extends SlackError {
     super(message, 400, details);
     this.name = 'CommandError';
   }
+}
+
+export class ConfigError extends Error {
+  public readonly statusCode: number = 500;
+
+  constructor(public readonly errors: any[]) {
+    super('Configuration validation failed');
+    this.name = 'ConfigError';
+  }
+
+  toString(): string {
+    if (this.errors.length === 0) {
+      return this.message;
+    }
+
+    const errorDetails = this.errors.map(error => `${error.field} - ${error.message}`).join(', ');
+    return `${this.message}: ${errorDetails}`;
+  }
 } 

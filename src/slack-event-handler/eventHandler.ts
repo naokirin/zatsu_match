@@ -2,11 +2,9 @@ import { SlackEvent } from '../types/slack';
 import { MatchingService } from '../services/matching/matchingService';
 import { HuddleService } from '../services/huddle/huddleService';
 import { getSlackChannelMembers } from '../utils/slack';
-import { Logger } from '../utils/logger';
 
 const matchingService = MatchingService.getInstance();
 const huddleService = HuddleService.getInstance();
-const logger = Logger.getInstance();
 
 interface LogContext {
   traceId: string;
@@ -33,19 +31,19 @@ async function handleMessageEvent(
 ): Promise<void> {
   if (!user || !channel) return;
 
-  logger.debug('Getting channel members', { ...context, channel });
+  console.debug('Getting channel members', { ...context, channel });
   const members = await getSlackChannelMembers(channel);
 
   if (members.length === 0) {
-    logger.warn('No members found in channel', { ...context, channel });
+    console.warn('No members found in channel', { ...context, channel });
     return;
   }
 
-  logger.info('Matching users', { ...context, memberCount: members.length });
+  console.info('Matching users', { ...context, memberCount: members.length });
   const pairs = await matchingService.matchUsers(members);
 
   for (const [userId1, userId2] of pairs) {
-    logger.info('Creating huddle', { ...context, userId1, userId2 });
+    console.info('Creating huddle', { ...context, userId1, userId2 });
     await huddleService.createHuddle(userId1, userId2);
   }
 } 

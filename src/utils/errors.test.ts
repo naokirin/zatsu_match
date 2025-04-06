@@ -53,7 +53,6 @@ describe('Custom Errors', () => {
     it('should create config error with validation errors', () => {
       const errors = [
         { field: 'SLACK_BOT_TOKEN', message: 'Slack bot token is required' },
-        { field: 'SLACK_SIGNING_SECRET', message: 'Slack signing secret is required' },
       ];
       const error = new ConfigError(errors);
       expect(error.message).toBe('Configuration validation failed');
