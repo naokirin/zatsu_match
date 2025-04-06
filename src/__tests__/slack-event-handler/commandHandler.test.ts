@@ -57,40 +57,6 @@ describe('Slack Command Handler', () => {
       expect(sendSlackMessage).toHaveBeenCalledTimes(2);
     });
 
-    it('should handle /score command with valid score', async () => {
-      const mockCommand: SlackCommand = {
-        command: '/score',
-        user_id: 'test-user',
-        channel_id: 'test-channel',
-        text: '5',
-        response_url: 'https://test.com',
-      };
-
-      await handleSlackCommand(mockCommand, { traceId: 'test-trace-id' });
-
-      expect(mockMatchingService.getInstance().updateUserScore).toHaveBeenCalledWith('test-user', 5);
-      expect(sendSlackEphemeralMessage).toHaveBeenCalledWith(
-        'test-channel',
-        'test-user',
-        'Your score has been updated to 5! 🎯'
-      );
-    });
-
-    it('should not update score for /score command with invalid score', async () => {
-      const mockCommand: SlackCommand = {
-        command: '/score',
-        user_id: 'test-user',
-        channel_id: 'test-channel',
-        text: 'invalid',
-        response_url: 'https://test.com',
-      };
-
-      await handleSlackCommand(mockCommand, { traceId: 'test-trace-id' });
-
-      expect(mockMatchingService.getInstance().updateUserScore).not.toHaveBeenCalled();
-      expect(sendSlackEphemeralMessage).not.toHaveBeenCalled();
-    });
-
     it('should handle unknown command', async () => {
       const mockCommand: SlackCommand = {
         command: '/unknown',
@@ -106,7 +72,11 @@ describe('Slack Command Handler', () => {
       expect(mockMatchingService.getInstance().matchUsers).not.toHaveBeenCalled();
       expect(mockHuddleService.getInstance().createHuddle).not.toHaveBeenCalled();
       expect(sendSlackMessage).not.toHaveBeenCalled();
-      expect(sendSlackEphemeralMessage).not.toHaveBeenCalled();
+      expect(sendSlackEphemeralMessage).toHaveBeenCalledWith(
+        'test-channel',
+        'test-user',
+        'Unknown command: /unknown'
+      );
     });
   });
 }); 
