@@ -1,19 +1,11 @@
 import { DynamoDB } from 'aws-sdk';
-import { WebClient } from '@slack/web-api';
 
 const dynamodb = new DynamoDB.DocumentClient();
-const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 
 interface Availability {
   userId: string;
   timestamp: string;
   channelId: string;
-}
-
-interface Match {
-  timestamp: string;
-  users: string[];
-  channelIds: string[];
 }
 
 export const handler = async (): Promise<Match[]> => {
