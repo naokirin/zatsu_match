@@ -1,0 +1,16 @@
+{
+  "Comment": "Matching state machine for finding available users and creating huddles",
+  "StartAt": "FindAvailableUsers",
+  "States": {
+    "FindAvailableUsers": {
+      "Type": "Task",
+      "Resource": "${MatchingFunction.Arn}",
+      "Next": "CreateHuddles"
+    },
+    "CreateHuddles": {
+      "Type": "Task",
+      "Resource": "${HuddleCreator.Arn}",
+      "End": true
+    }
+  }
+} 

@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Slack-based matching application for scheduling huddles
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: nodejs23.x
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        DYNAMODB_TABLE: !Ref AvailabilityTable
+        SLACK_BOT_TOKEN: !Sub "{{resolve:secretsmanager:${AWS::StackName}-secrets:SecretString:SLACK_BOT_TOKEN}}"
+
+Resources:
+  # DynamoDB Table
+  AvailabilityTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-availability
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  # Slack Event Handler Lambda
+  SlackEventHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/slack-event-handler/
+      Handler: index.handler
+      Events:
+        SlackEvent:
+          Type: Api
+          Properties:
+            Path: /slack/events
+            Method: post
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AvailabilityTable
+
+  # Matching Step Function
+  MatchingStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: statemachine/matching.asl.json
+      Role: !GetAtt StepFunctionsExecutionRole.Arn
+      Events:
+        Schedule:
+          Type: Schedule
+          Properties:
+            Schedule: rate(30 minutes)
+
+  # Step Functions IAM Role
+  StepFunctionsExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: StepFunctionsExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt MatchingFunction.Arn
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !GetAtt AvailabilityTable.Arn
+
+  # Matching Lambda Function
+  MatchingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/matching/
+      Handler: index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AvailabilityTable
+
+  # Huddle Creator Lambda Function
+  HuddleCreator:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/huddle-creator/
+      Handler: index.handler
+      Policies:
+        - SecretsManagerReadWrite:
+            SecretArn: !Sub "{{resolve:secretsmanager:${AWS::StackName}-secrets:SecretString:SLACK_BOT_TOKEN}}"
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/slack/events"
