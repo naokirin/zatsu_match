@@ -1,30 +1,19 @@
 // モックを変数に入れて先に定義
 const mockSlackFunctions = {
-  getSlackChannelMembers: jest.fn().mockResolvedValue(['user1', 'user2']),
   sendSlackEphemeralMessage: jest.fn()
 };
 
-const mockMatchingService = {
-  getInstance: jest.fn().mockReturnValue({
-    matchUsers: jest.fn().mockResolvedValue([['user1', 'user2']]),
-    updateUserScore: jest.fn()
-  })
-};
-
-const mockHuddleService = {
-  getInstance: jest.fn().mockReturnValue({
-    createHuddle: jest.fn().mockResolvedValue(undefined)
-  })
-};
+const mockHandleSlackCommand = jest.fn();
 
 // モックをインポートより前に設定
 jest.mock('../../utils/slack', () => mockSlackFunctions);
-jest.mock('../../services/matching/matchingService', () => ({
-  MatchingService: mockMatchingService
-}));
-jest.mock('../../services/huddle/huddleService', () => ({
-  HuddleService: mockHuddleService
-}));
+jest.mock('../../slack-event-handler/commandHandler', () => {
+  const originalModule = jest.requireActual('../../slack-event-handler/commandHandler');
+  return {
+    ...originalModule,
+    handleSlackCommand: mockHandleSlackCommand,
+  }
+});
 
 import { handler } from '../../slack-event-handler';
 import { APIGatewayProxyEvent } from 'aws-lambda';

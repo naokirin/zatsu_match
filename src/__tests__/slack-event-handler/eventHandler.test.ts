@@ -1,32 +1,17 @@
 // モックを変数に入れて先に定義
-const mockSlackFunctions = {
-  getSlackChannelMembers: jest.fn()
-};
-
-const mockMatchingService = {
-  getInstance: jest.fn().mockReturnValue({
-    matchUsers: jest.fn().mockResolvedValue([['user1', 'user2'], ['user3', 'user4']])
-  })
-};
-
-const mockHuddleService = {
-  getInstance: jest.fn().mockReturnValue({
-    createHuddle: jest.fn().mockResolvedValue(undefined)
-  })
-};
+const mockHandleSlackCommand = jest.fn();
 
 // モックをインポートより前に設定
-jest.mock('../../utils/slack', () => mockSlackFunctions);
-jest.mock('../../services/matching/matchingService', () => ({
-  MatchingService: mockMatchingService
-}));
-jest.mock('../../services/huddle/huddleService', () => ({
-  HuddleService: mockHuddleService
-}));
+jest.mock('../../slack-event-handler/commandHandler', () => {
+  const originalModule = jest.requireActual('../../slack-event-handler/commandHandler');
+  return {
+    ...originalModule,
+    handleSlackCommand: mockHandleSlackCommand,
+  }
+});
 
 import { handleSlackEvent } from '../../slack-event-handler/eventHandler';
 import { SlackEvent } from '../../types/slack';
-import { getSlackChannelMembers } from '../../utils/slack';
 
 describe('Slack Event Handler', () => {
   beforeEach(() => {
@@ -40,20 +25,15 @@ describe('Slack Event Handler', () => {
         event: {
           type: 'message',
           user: 'test-user',
-          text: 'test message',
+          text: '<@1AUG9KI> test message',
           channel: 'test-channel',
           ts: '1234567890',
         },
       };
 
-      const mockMembers = ['user1', 'user2', 'user3', 'user4'];
-      (getSlackChannelMembers as jest.Mock).mockResolvedValue(mockMembers);
-
       await handleSlackEvent(mockEvent, { traceId: 'test-trace-id' });
 
-      expect(getSlackChannelMembers).toHaveBeenCalledWith('test-channel');
-      expect(mockMatchingService.getInstance().matchUsers).toHaveBeenCalledWith(mockMembers);
-      expect(mockHuddleService.getInstance().createHuddle).toHaveBeenCalledTimes(2);
+      expect(mockHandleSlackCommand).toHaveBeenCalledTimes(1);
     });
 
     it('should not create huddles when there are no members', async () => {
@@ -68,11 +48,9 @@ describe('Slack Event Handler', () => {
         },
       };
 
-      (getSlackChannelMembers as jest.Mock).mockResolvedValue([]);
-
       await handleSlackEvent(mockEvent, { traceId: 'test-trace-id' });
 
-      expect(mockHuddleService.getInstance().createHuddle).not.toHaveBeenCalled();
+      expect(mockHandleSlackCommand).not.toHaveBeenCalled();
     });
 
     it('should not handle non-message events', async () => {
@@ -89,8 +67,7 @@ describe('Slack Event Handler', () => {
 
       await handleSlackEvent(mockEvent, { traceId: 'test-trace-id' });
 
-      expect(getSlackChannelMembers).not.toHaveBeenCalled();
-      expect(mockHuddleService.getInstance().createHuddle).not.toHaveBeenCalled();
+      expect(mockHandleSlackCommand).not.toHaveBeenCalled();
     });
 
     it('should not handle message events without user or channel', async () => {
@@ -107,8 +84,7 @@ describe('Slack Event Handler', () => {
 
       await handleSlackEvent(mockEvent, { traceId: 'test-trace-id' });
 
-      expect(getSlackChannelMembers).not.toHaveBeenCalled();
-      expect(mockHuddleService.getInstance().createHuddle).not.toHaveBeenCalled();
+      expect(mockHandleSlackCommand).not.toHaveBeenCalled();
     });
   });
 }); 

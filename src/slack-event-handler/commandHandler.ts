@@ -92,15 +92,15 @@ async function handleRegisterCommand(
     }
 
     try {
-      const timestamps = parseTimeRange(dateStr, timeRange);
+      const timestamps: string[] = parseTimeRange(dateStr, timeRange);
 
       // 各時間スロットを登録
-      for (const timestamp of timestamps) {
+      timestamps.forEach(async (timestamp) => {
         await registerAvailability(userId, timestamp, channelId);
         registeredCount++;
-      }
+      });
     } catch (error) {
-      throw new CommandError(`時間範囲の解析に失敗しました: ${(error as Error).message}`);
+      throw new CommandError(`時間の登録に失敗しました: ${(error as Error).message}`);
     }
   }
 

@@ -1,5 +1,5 @@
 import { WebClient } from '@slack/web-api';
-import { SlackUser, SlackChannel, SlackMessage } from '../types/slack';
+import { SlackUser, SlackMessage } from '../types/slack';
 import { SlackApiError } from './errors';
 
 const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
@@ -15,23 +15,6 @@ export async function getSlackClient(): Promise<WebClient> {
     throw new SlackApiError('Missing Slack bot token');
   }
   return new WebClient(token);
-}
-
-export async function getSlackChannelMembers(channelId: string): Promise<string[]> {
-  try {
-    const client = await getSlackClient();
-    const response = await client.conversations.members({
-      channel: channelId,
-    });
-
-    if (!response.members || !response.ok) {
-      throw new SlackApiError('Failed to get channel members', response);
-    }
-
-    return response.members;
-  } catch (error) {
-    throw new SlackApiError('Error getting channel members', error);
-  }
 }
 
 export async function sendSlackEphemeralMessage(
