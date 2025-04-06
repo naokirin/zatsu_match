@@ -1,6 +1,7 @@
-import { DynamoDB } from 'aws-sdk';
+import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
-const dynamodb = new DynamoDB.DocumentClient();
+const dynamodb: DynamoDBDocument = DynamoDBDocument.from(new DynamoDB());
 const TABLE_NAME = process.env.DYNAMODB_TABLE!;
 
 export interface Availability {
@@ -31,7 +32,7 @@ export async function registerAvailability(
   await dynamodb.put({
     TableName: TABLE_NAME,
     Item: item
-  }).promise();
+  });
 }
 
 /**
@@ -44,7 +45,7 @@ export async function getUserAvailabilities(userId: string): Promise<Availabilit
     ExpressionAttributeValues: {
       ':userId': userId
     }
-  }).promise();
+  });
 
   return result.Items as AvailabilityRecord[];
 }
@@ -59,7 +60,7 @@ export async function deleteAvailability(userId: string, timestamp: string): Pro
       userId,
       timestamp
     }
-  }).promise();
+  });
 }
 
 /**
@@ -75,7 +76,7 @@ export async function deleteAllUserAvailabilities(userId: string): Promise<void>
         userId: availability.userId,
         timestamp: availability.timestamp
       }
-    }).promise();
+    });
   });
 
   await Promise.all(deletePromises);

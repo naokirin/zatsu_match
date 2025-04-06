@@ -1,6 +1,8 @@
-import { DynamoDB } from 'aws-sdk';
+import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import { Match } from '../types/match';
 
-const dynamodb = new DynamoDB.DocumentClient();
+const dynamodb = DynamoDBDocument.from(new DynamoDB());
 
 interface Availability {
   userId: string;
@@ -18,7 +20,7 @@ export const handler = async (): Promise<Match[]> => {
     // 全ユーザーの空き時間を取得
     const result = await dynamodb.scan({
       TableName: process.env.DYNAMODB_TABLE!,
-    }).promise();
+    });
 
     const availabilities = result.Items as Availability[];
 

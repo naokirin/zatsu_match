@@ -1,4 +1,5 @@
 import { WebClient } from '@slack/web-api';
+import { Match } from '../types/match';
 
 const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 
