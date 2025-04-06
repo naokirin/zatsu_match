@@ -1,7 +1,7 @@
 import { SlackEvent } from '../types/slack';
 import { MatchingService } from '../services/matching/matchingService';
 import { HuddleService } from '../services/huddle/huddleService';
-import { getSlackChannelMembers, sendSlackMessage, sendSlackEphemeralMessage } from '../utils/slack';
+import { getSlackChannelMembers } from '../utils/slack';
 
 const matchingService = MatchingService.getInstance();
 const huddleService = HuddleService.getInstance();

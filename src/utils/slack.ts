@@ -9,11 +9,6 @@ export async function getSlackUserInfo(userId: string): Promise<SlackUser> {
   return result.user as SlackUser;
 }
 
-export async function getSlackChannelInfo(channelId: string): Promise<SlackChannel> {
-  const result = await slack.conversations.info({ channel: channelId });
-  return result.channel as SlackChannel;
-}
-
 export async function getSlackClient(): Promise<WebClient> {
   const token = process.env.SLACK_BOT_TOKEN;
   if (!token) {
@@ -36,24 +31,6 @@ export async function getSlackChannelMembers(channelId: string): Promise<string[
     return response.members;
   } catch (error) {
     throw new SlackApiError('Error getting channel members', error);
-  }
-}
-
-export async function sendSlackMessage(channelId: string, message: string | SlackMessage): Promise<void> {
-  try {
-    const client = await getSlackClient();
-
-    const payload = typeof message === 'string'
-      ? { text: message, channel: channelId }
-      : { ...message, channel: channelId };
-
-    const response = await client.chat.postMessage(payload);
-
-    if (!response.ok) {
-      throw new SlackApiError('Failed to send message', response);
-    }
-  } catch (error) {
-    throw new SlackApiError('Error sending message', error);
   }
 }
 

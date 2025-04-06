@@ -1,7 +1,6 @@
 // モックを変数に入れて先に定義
 const mockSlackFunctions = {
   getSlackChannelMembers: jest.fn(),
-  sendSlackMessage: jest.fn(),
   sendSlackEphemeralMessage: jest.fn()
 };
 
@@ -29,7 +28,7 @@ jest.mock('../../services/huddle/huddleService', () => ({
 
 import { handleSlackCommand } from '../../slack-event-handler/commandHandler';
 import { SlackCommand } from '../../types/slack';
-import { getSlackChannelMembers, sendSlackMessage, sendSlackEphemeralMessage } from '../../utils/slack';
+import { getSlackChannelMembers, sendSlackEphemeralMessage } from '../../utils/slack';
 
 describe('Slack Command Handler', () => {
   beforeEach(() => {
@@ -54,7 +53,6 @@ describe('Slack Command Handler', () => {
       expect(getSlackChannelMembers).toHaveBeenCalledWith('test-channel');
       expect(mockMatchingService.getInstance().matchUsers).toHaveBeenCalledWith(mockMembers);
       expect(mockHuddleService.getInstance().createHuddle).toHaveBeenCalledTimes(2);
-      expect(sendSlackMessage).toHaveBeenCalledTimes(2);
     });
 
     it('should handle unknown command', async () => {
@@ -71,7 +69,6 @@ describe('Slack Command Handler', () => {
       expect(getSlackChannelMembers).not.toHaveBeenCalled();
       expect(mockMatchingService.getInstance().matchUsers).not.toHaveBeenCalled();
       expect(mockHuddleService.getInstance().createHuddle).not.toHaveBeenCalled();
-      expect(sendSlackMessage).not.toHaveBeenCalled();
       expect(sendSlackEphemeralMessage).toHaveBeenCalledWith(
         'test-channel',
         'test-user',

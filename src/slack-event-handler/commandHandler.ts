@@ -1,7 +1,5 @@
 import { SlackCommand } from '../types/slack';
-import { MatchingService } from '../services/matching/matchingService';
-import { HuddleService } from '../services/huddle/huddleService';
-import { getSlackChannelMembers, sendSlackMessage, sendSlackEphemeralMessage } from '../utils/slack';
+import { sendSlackEphemeralMessage } from '../utils/slack';
 import {
   registerAvailability,
   getUserAvailabilities,
@@ -24,11 +22,8 @@ export async function handleSlackCommand(
   const commandContext = { ...context, user_id, channel_id, command: commandName };
 
   switch (commandName) {
-    case '/zatsu':
+    case '/zatsu_match':
       await handleZatsuCommand(user_id, channel_id, text, commandContext);
-      break;
-    case '/match':
-      await handleMatchCommand(channel_id, commandContext);
       break;
     default:
       await sendSlackEphemeralMessage(
@@ -37,35 +32,6 @@ export async function handleSlackCommand(
         `Unknown command: ${commandName}`
       );
       break;
-  }
-}
-
-async function handleMatchCommand(
-  channelId: string,
-  context: LogContext
-): Promise<void> {
-  // チャンネルメンバーを取得
-  const members = await getSlackChannelMembers(channelId);
-
-  if (members.length === 0) {
-    console.warn('No members found in channel', { ...context, channel: channelId });
-    return;
-  }
-
-  // ユーザーをマッチング
-  console.info('Matching users', { ...context, memberCount: members.length });
-  const matchingService = MatchingService.getInstance();
-  const pairs = await matchingService.matchUsers(members);
-
-  // ハドルを作成して通知
-  const huddleService = HuddleService.getInstance();
-
-  for (const [userId1, userId2] of pairs) {
-    console.info('Creating huddle', { ...context, userId1, userId2 });
-    await huddleService.createHuddle(userId1, userId2);
-
-    // マッチングをユーザーに通知
-    await sendSlackMessage(channelId, `<@${userId1}> と <@${userId2}> をマッチしました！`);
   }
 }
 

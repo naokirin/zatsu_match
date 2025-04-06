@@ -1,7 +1,6 @@
 // モックを変数に入れて先に定義
 const mockSlackFunctions = {
   getSlackChannelMembers: jest.fn().mockResolvedValue(['user1', 'user2']),
-  sendSlackMessage: jest.fn(),
   sendSlackEphemeralMessage: jest.fn()
 };
 
