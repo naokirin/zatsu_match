@@ -57,7 +57,7 @@ Resources:
         Schedule:
           Type: Schedule
           Properties:
-            Schedule: rate(30 minutes)
+            Schedule: cron(29,59 * * * ? *)
 
   # Step Functions IAM Role
   StepFunctionsExecutionRole:
