@@ -1,4 +1,4 @@
-import { SlackEvent } from '../types/slack';
+import type { SlackEvent } from "../types/slack";
 interface LogContext {
   traceId: string;
   [key: string]: unknown;
@@ -6,23 +6,23 @@ interface LogContext {
 
 export async function handleSlackEvent(
   event: SlackEvent,
-  context: LogContext
+  context: LogContext,
 ): Promise<void> {
   const { type } = event.event;
 
   switch (type) {
-    case 'message':
+    case "message":
       await handleMessageEvent(event, context);
       break;
     default:
-      console.warn('Unsupported event type', { ...context, eventType: type });
+      console.warn("Unsupported event type", { ...context, eventType: type });
       break;
   }
 }
 
 async function handleMessageEvent(
   event: SlackEvent,
-  context: LogContext
+  context: LogContext,
 ): Promise<void> {
   const { user, channel, text, bot_id } = event.event;
 
@@ -35,20 +35,20 @@ async function handleMessageEvent(
 
   if (matches) {
     const subCommand = matches[1].toLowerCase();
-    const args = matches[2]?.trim() || '';
+    const args = matches[2]?.trim() || "";
 
     // Slackコマンドのフォーマットでハンドラーをトリガー
     const command = {
-      command: '/zatsu_match',
+      command: "/zatsu_match",
       text: `${subCommand} ${args}`,
       user_id: user,
       channel_id: channel,
-      response_url: ''
+      response_url: "",
     };
 
     // コマンドハンドラーをインポートして呼び出し
-    const { handleSlackCommand } = require('./commandHandler');
+    const { handleSlackCommand } = require("./commandHandler");
     await handleSlackCommand(command, context);
     return;
   }
-} 
+}

@@ -1,5 +1,5 @@
-import { WebClient } from '@slack/web-api';
-import { Match } from '../types/match';
+import { WebClient } from "@slack/web-api";
+import type { Match } from "../types/match";
 
 const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 
@@ -15,8 +15,8 @@ export const handler = async (event: { matches: Match[] }): Promise<void> => {
 
         // チャンネルにユーザーを招待
         await slack.conversations.invite({
-          channel: result.channel!.id!,
-          users: match.users.join(','),
+          channel: result.channel?.id ?? "",
+          users: match.users.join(","),
         });
 
         // 参加者に通知
@@ -29,7 +29,7 @@ export const handler = async (event: { matches: Match[] }): Promise<void> => {
       }
     }
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error:", error);
     throw error;
   }
-}; 
+};

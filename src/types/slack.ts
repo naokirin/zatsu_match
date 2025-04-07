@@ -18,10 +18,19 @@ export interface SlackCommand {
   response_url: string;
 }
 
+export interface SlackBlock {
+  type: string;
+  [key: string]: unknown;
+}
+
+export interface SlackAttachment {
+  [key: string]: unknown;
+}
+
 export interface SlackMessage {
   text: string;
-  blocks?: any[];
-  attachments?: any[];
+  blocks?: SlackBlock[];
+  attachments?: SlackAttachment[];
 }
 
 export interface SlackUser {
@@ -40,4 +49,4 @@ export interface SlackChannel {
   is_private: boolean;
   is_archived: boolean;
   members: string[];
-} 
+}

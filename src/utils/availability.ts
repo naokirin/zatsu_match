@@ -1,8 +1,8 @@
-import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
-import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import { DynamoDB } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 
 const dynamodb: DynamoDBDocument = DynamoDBDocument.from(new DynamoDB());
-const TABLE_NAME = process.env.DYNAMODB_TABLE!;
+const TABLE_NAME = process.env.DYNAMODB_TABLE ?? "";
 
 export interface Availability {
   userId: string;
@@ -20,15 +20,15 @@ export interface AvailabilityRecord extends Availability {
 export async function registerAvailability(
   userId: string,
   timestamp: string,
-  channelId: string
+  channelId: string,
 ): Promise<boolean> {
   // 既存の登録がないか確認
   const existingAvailability = await dynamodb.get({
     TableName: TABLE_NAME,
     Key: {
       userId,
-      timestamp
-    }
+      timestamp,
+    },
   });
 
   // 既に同じ時間に登録がある場合は登録しない
@@ -40,12 +40,12 @@ export async function registerAvailability(
     userId,
     timestamp,
     channelId,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 
   await dynamodb.put({
     TableName: TABLE_NAME,
-    Item: item
+    Item: item,
   });
 
   return true;
@@ -54,13 +54,15 @@ export async function registerAvailability(
 /**
  * 特定のユーザーの空き時間を取得する
  */
-export async function getUserAvailabilities(userId: string): Promise<AvailabilityRecord[]> {
+export async function getUserAvailabilities(
+  userId: string,
+): Promise<AvailabilityRecord[]> {
   const result = await dynamodb.query({
     TableName: TABLE_NAME,
-    KeyConditionExpression: 'userId = :userId',
+    KeyConditionExpression: "userId = :userId",
     ExpressionAttributeValues: {
-      ':userId': userId
-    }
+      ":userId": userId,
+    },
   });
 
   return result.Items as AvailabilityRecord[];
@@ -69,29 +71,34 @@ export async function getUserAvailabilities(userId: string): Promise<Availabilit
 /**
  * 特定の空き時間を削除する
  */
-export async function deleteAvailability(userId: string, timestamp: string): Promise<void> {
+export async function deleteAvailability(
+  userId: string,
+  timestamp: string,
+): Promise<void> {
   await dynamodb.delete({
     TableName: TABLE_NAME,
     Key: {
       userId,
-      timestamp
-    }
+      timestamp,
+    },
   });
 }
 
 /**
  * ユーザーの全ての空き時間を削除する
  */
-export async function deleteAllUserAvailabilities(userId: string): Promise<void> {
+export async function deleteAllUserAvailabilities(
+  userId: string,
+): Promise<void> {
   const availabilities = await getUserAvailabilities(userId);
 
-  const deletePromises = availabilities.map(availability => {
+  const deletePromises = availabilities.map((availability) => {
     return dynamodb.delete({
       TableName: TABLE_NAME,
       Key: {
         userId: availability.userId,
-        timestamp: availability.timestamp
-      }
+        timestamp: availability.timestamp,
+      },
     });
   });
 
@@ -103,23 +110,32 @@ export async function deleteAllUserAvailabilities(userId: string): Promise<void>
  * 例: parseTimeRange('2023-12-15', '13:00-15:00') => ['2023-12-15T13:00', '2023-12-15T13:30', '2023-12-15T14:00', '2023-12-15T14:30']
  */
 export function parseTimeRange(dateStr: string, timeRange: string): string[] {
-  const [startTime, endTime] = timeRange.split('-');
+  const [startTime, endTime] = timeRange.split("-");
 
   if (!startTime || !endTime) {
-    throw new Error(`Invalid time range format: ${timeRange}. Expected format: HH:MM-HH:MM`);
+    throw new Error(
+      `Invalid time range format: ${timeRange}. Expected format: HH:MM-HH:MM`,
+    );
   }
 
   // 時間と分を分解
-  const [startHourStr, startMinStr = '00'] = startTime.split(':');
-  const [endHourStr, endMinStr = '00'] = endTime.split(':');
+  const [startHourStr, startMinStr = "00"] = startTime.split(":");
+  const [endHourStr, endMinStr = "00"] = endTime.split(":");
 
-  const startHour = parseInt(startHourStr);
-  const startMin = parseInt(startMinStr);
-  const endHour = parseInt(endHourStr);
-  const endMin = parseInt(endMinStr);
+  const startHour = Number.parseInt(startHourStr);
+  const startMin = Number.parseInt(startMinStr);
+  const endHour = Number.parseInt(endHourStr);
+  const endMin = Number.parseInt(endMinStr);
 
-  if (isNaN(startHour) || isNaN(endHour) || isNaN(startMin) || isNaN(endMin)) {
-    throw new Error(`Invalid time format: ${timeRange}. Expected format: HH:MM-HH:MM`);
+  if (
+    Number.isNaN(startHour) ||
+    Number.isNaN(endHour) ||
+    Number.isNaN(startMin) ||
+    Number.isNaN(endMin)
+  ) {
+    throw new Error(
+      `Invalid time format: ${timeRange}. Expected format: HH:MM-HH:MM`,
+    );
   }
 
   // 開始時間と終了時間を分単位に変換して比較
@@ -127,16 +143,22 @@ export function parseTimeRange(dateStr: string, timeRange: string): string[] {
   const endTimeInMinutes = endHour * 60 + endMin;
 
   if (startTimeInMinutes >= endTimeInMinutes) {
-    throw new Error(`Invalid time range: ${timeRange}. End time must be later than start time.`);
+    throw new Error(
+      `Invalid time range: ${timeRange}. End time must be later than start time.`,
+    );
   }
 
   const timestamps: string[] = [];
   // 30分間隔でタイムスタンプを生成
-  for (let timeInMinutes = startTimeInMinutes; timeInMinutes < endTimeInMinutes; timeInMinutes += 30) {
+  for (
+    let timeInMinutes = startTimeInMinutes;
+    timeInMinutes < endTimeInMinutes;
+    timeInMinutes += 30
+  ) {
     const hour = Math.floor(timeInMinutes / 60);
     const minute = timeInMinutes % 60;
     timestamps.push(
-      `${dateStr}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+      `${dateStr}T${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`,
     );
   }
 
@@ -161,7 +183,7 @@ export async function deletePastAvailabilities(): Promise<number> {
 
     // 現在時刻より過去の不要な登録データをフィルタリング
     const pastAvailabilities = availabilities.filter(
-      (availability) => availability.timestamp < currentTimestamp
+      (availability) => availability.timestamp < currentTimestamp,
     );
 
     // 削除対象がなければ0を返す
@@ -185,7 +207,7 @@ export async function deletePastAvailabilities(): Promise<number> {
     // 削除したデータの件数を返す
     return pastAvailabilities.length;
   } catch (error) {
-    console.error('過去の登録データ削除中にエラーが発生しました:', error);
+    console.error("過去の登録データ削除中にエラーが発生しました:", error);
     throw error;
   }
 }
@@ -193,13 +215,16 @@ export async function deletePastAvailabilities(): Promise<number> {
 /**
  * 指定した時刻のユーザーの空き時間からマッチングを作成する
  */
-export async function createMatches(targetTimestamp?: string): Promise<Match[]> {
+export async function createMatches(
+  targetTimestamp?: string,
+): Promise<Match[]> {
   try {
     // 現在時刻から30分後の時刻を取得（デフォルト）
     const now = new Date();
     const thirtyMinutesLater = new Date(now.getTime() + 30 * 60000);
     // 例: 2023-12-15T13:00 のように16文字までにスライス（秒以下を除去）
-    const timeToMatch = targetTimestamp || thirtyMinutesLater.toISOString().slice(0, 16);
+    const timeToMatch =
+      targetTimestamp || thirtyMinutesLater.toISOString().slice(0, 16);
 
     // 全ユーザーの空き時間を取得
     const result = await dynamodb.scan({
@@ -213,16 +238,16 @@ export async function createMatches(targetTimestamp?: string): Promise<Match[]> 
 
     // マッチングの最大人数
     const MAX_USERS_PER_MATCH = process.env.MAX_USERS_PER_MATCH
-      ? parseInt(process.env.MAX_USERS_PER_MATCH)
+      ? Number.parseInt(process.env.MAX_USERS_PER_MATCH)
       : 5;
 
-    availabilities.forEach((availability) => {
+    for (const availability of availabilities) {
       if (availability.timestamp === timeToMatch) {
         if (!timestampGroups.has(availability.timestamp)) {
           timestampGroups.set(availability.timestamp, []);
         }
 
-        const matches = timestampGroups.get(availability.timestamp)!;
+        const matches = timestampGroups.get(availability.timestamp) ?? [];
 
         // 既存のマッチグループで人数上限に達していないものを探す
         let matchFound = false;
@@ -244,17 +269,17 @@ export async function createMatches(targetTimestamp?: string): Promise<Match[]> 
           });
         }
       }
-    });
+    }
 
     // 全てのマッチンググループを1つの配列にまとめる
     const allMatches: Match[] = [];
-    timestampGroups.forEach(matches => {
+    for (const matches of timestampGroups.values()) {
       allMatches.push(...matches);
-    });
+    }
 
     return allMatches;
   } catch (error) {
-    console.error('マッチング作成中にエラーが発生しました:', error);
+    console.error("マッチング作成中にエラーが発生しました:", error);
     throw error;
   }
 }
@@ -263,4 +288,4 @@ export interface Match {
   timestamp: string;
   users: string[];
   channelIds: string[];
-} 
+}

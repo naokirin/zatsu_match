@@ -1,4 +1,8 @@
-import { Match, createMatches, deletePastAvailabilities } from '../utils/availability';
+import {
+  type Match,
+  createMatches,
+  deletePastAvailabilities,
+} from "../utils/availability";
 
 export const handler = async (): Promise<Match[]> => {
   try {
@@ -12,13 +16,13 @@ export const handler = async (): Promise<Match[]> => {
         console.log(`${deletedCount}件の過去の登録データを削除しました`);
       }
     } catch (error) {
-      console.error('過去データの削除処理中にエラーが発生しました:', error);
+      console.error("過去データの削除処理中にエラーが発生しました:", error);
       // エラーが発生してもマッチング処理は続行
     }
 
     return matches;
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error:", error);
     throw error;
   }
-}; 
+};

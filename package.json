@@ -8,7 +8,9 @@
   "scripts": {
     "build": "tsc",
     "clean": "tsc --build --clean",
-    "test": "jest"
+    "test": "jest",
+    "check": "biome check .",
+    "check:fix": "biome check --apply ."
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.782.0",
@@ -16,6 +18,7 @@
     "@slack/web-api": "^7.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@types/aws-lambda": "^8.10.92",
     "@types/jest": "^29.5.11",
     "@types/node": "^22.14.0",
