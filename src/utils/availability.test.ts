@@ -7,7 +7,8 @@ import {
   deleteAvailability,
   deleteAllUserAvailabilities,
   parseTimeRange,
-  deletePastAvailabilities
+  deletePastAvailabilities,
+  createMatches
 } from './availability';
 
 describe('空き時間管理機能', () => {
@@ -358,6 +359,96 @@ describe('空き時間管理機能', () => {
 
       // エラーがスローされることを確認
       await expect(deletePastAvailabilities()).rejects.toThrow('テスト用エラー');
+    });
+  });
+
+  describe('createMatches()', () => {
+    it('指定した時刻のマッチングを生成すること', async () => {
+      // モックデータを設定
+      const mockItems = [
+        { userId: 'U1', timestamp: '2023-12-15T13:00', channelId: 'C1' },
+        { userId: 'U2', timestamp: '2023-12-15T13:00', channelId: 'C2' },
+        { userId: 'U3', timestamp: '2023-12-15T13:00', channelId: 'C3' },
+        { userId: 'U4', timestamp: '2023-12-15T13:00', channelId: 'C4' },
+        { userId: 'U5', timestamp: '2023-12-15T13:00', channelId: 'C5' },
+        { userId: 'U6', timestamp: '2023-12-15T13:00', channelId: 'C6' },
+        { userId: 'U7', timestamp: '2023-12-15T14:00', channelId: 'C7' },
+      ];
+      mockDynamoDB.on(ScanCommand).resolves({ Items: mockItems });
+
+      // 関数実行
+      const result = await createMatches('2023-12-15T13:00');
+
+      // 検証
+      const scanCalls = mockDynamoDB.calls().filter(call => call.args[0] instanceof ScanCommand);
+      expect(scanCalls).toHaveLength(1);
+
+      // 結果の確認
+      expect(result).toHaveLength(2); // 2つのグループができるはず
+
+      // 最初のグループは5人（最大人数）
+      expect(result[0].timestamp).toBe('2023-12-15T13:00');
+      expect(result[0].users).toHaveLength(5);
+      expect(result[0].channelIds).toHaveLength(5);
+
+      // 2つ目のグループは1人
+      expect(result[1].timestamp).toBe('2023-12-15T13:00');
+      expect(result[1].users).toHaveLength(1);
+      expect(result[1].channelIds).toHaveLength(1);
+
+      // 全員が含まれていることを確認
+      const allUsers = [...result[0].users, ...result[1].users];
+      expect(allUsers.sort()).toEqual(['U1', 'U2', 'U3', 'U4', 'U5', 'U6'].sort());
+    });
+
+    it('デフォルトでは30分後の時刻のマッチングを生成すること', async () => {
+      // テスト用の固定時刻
+      const testTimeStr = '2023-12-15T13:00';
+
+      // createMatchesに渡す時刻をモック
+      jest.spyOn(global, 'Date').mockImplementation(() => {
+        return {
+          getTime: () => 1234567890000, // 実際の値は重要ではない
+          toISOString: () => testTimeStr + ':00.000Z' // 必ず16文字にスライスされたときにtestTimeStrになるよう設定
+        } as unknown as Date;
+      });
+
+      // モックデータを設定
+      const mockItems = [
+        { userId: 'U1', timestamp: testTimeStr, channelId: 'C1' },
+        { userId: 'U2', timestamp: testTimeStr, channelId: 'C2' },
+        { userId: 'U3', timestamp: '2023-12-15T14:00', channelId: 'C3' },
+      ];
+      mockDynamoDB.on(ScanCommand).resolves({ Items: mockItems });
+
+      try {
+        // 関数実行（時刻指定なし）
+        const result = await createMatches();
+
+        // 検証
+        expect(result).toHaveLength(1);
+        expect(result[0].timestamp).toBe(testTimeStr);
+        expect(result[0].users).toEqual(['U1', 'U2']);
+        expect(result[0].channelIds).toEqual(['C1', 'C2']);
+      } finally {
+        // グローバルモックを元に戻す
+        jest.restoreAllMocks();
+      }
+    });
+
+    it('該当する時刻のユーザーがいない場合は空の配列を返すこと', async () => {
+      // モックデータを設定
+      const mockItems = [
+        { userId: 'U1', timestamp: '2023-12-15T14:00', channelId: 'C1' },
+        { userId: 'U2', timestamp: '2023-12-15T14:00', channelId: 'C2' },
+      ];
+      mockDynamoDB.on(ScanCommand).resolves({ Items: mockItems });
+
+      // 関数実行
+      const result = await createMatches('2023-12-15T13:00');
+
+      // 検証
+      expect(result).toHaveLength(0);
     });
   });
 }); 

@@ -48,6 +48,7 @@ cp .env.example .env
 ```
 SLACK_BOT_TOKEN=your_slack_bot_token
 DYNAMODB_TABLE=your_dynamodb_table_name
+MAX_USERS_PER_MATCH=5
 ```
 
 4. ビルド

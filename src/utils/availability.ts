@@ -188,4 +188,79 @@ export async function deletePastAvailabilities(): Promise<number> {
     console.error('過去の登録データ削除中にエラーが発生しました:', error);
     throw error;
   }
+}
+
+/**
+ * 指定した時刻のユーザーの空き時間からマッチングを作成する
+ */
+export async function createMatches(targetTimestamp?: string): Promise<Match[]> {
+  try {
+    // 現在時刻から30分後の時刻を取得（デフォルト）
+    const now = new Date();
+    const thirtyMinutesLater = new Date(now.getTime() + 30 * 60000);
+    // 例: 2023-12-15T13:00 のように16文字までにスライス（秒以下を除去）
+    const timeToMatch = targetTimestamp || thirtyMinutesLater.toISOString().slice(0, 16);
+
+    // 全ユーザーの空き時間を取得
+    const result = await dynamodb.scan({
+      TableName: TABLE_NAME,
+    });
+
+    const availabilities = result.Items as Availability[];
+
+    // タイムスタンプでグループ化
+    const timestampGroups = new Map<string, Match[]>();
+
+    // マッチングの最大人数
+    const MAX_USERS_PER_MATCH = process.env.MAX_USERS_PER_MATCH
+      ? parseInt(process.env.MAX_USERS_PER_MATCH)
+      : 5;
+
+    availabilities.forEach((availability) => {
+      if (availability.timestamp === timeToMatch) {
+        if (!timestampGroups.has(availability.timestamp)) {
+          timestampGroups.set(availability.timestamp, []);
+        }
+
+        const matches = timestampGroups.get(availability.timestamp)!;
+
+        // 既存のマッチグループで人数上限に達していないものを探す
+        let matchFound = false;
+        for (const match of matches) {
+          if (match.users.length < MAX_USERS_PER_MATCH) {
+            match.users.push(availability.userId);
+            match.channelIds.push(availability.channelId);
+            matchFound = true;
+            break;
+          }
+        }
+
+        // 既存のグループが見つからないか上限に達している場合は新しいグループを作成
+        if (!matchFound) {
+          matches.push({
+            timestamp: availability.timestamp,
+            users: [availability.userId],
+            channelIds: [availability.channelId],
+          });
+        }
+      }
+    });
+
+    // 全てのマッチンググループを1つの配列にまとめる
+    const allMatches: Match[] = [];
+    timestampGroups.forEach(matches => {
+      allMatches.push(...matches);
+    });
+
+    return allMatches;
+  } catch (error) {
+    console.error('マッチング作成中にエラーが発生しました:', error);
+    throw error;
+  }
+}
+
+export interface Match {
+  timestamp: string;
+  users: string[];
+  channelIds: string[];
 } 
