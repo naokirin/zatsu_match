@@ -107,4 +107,51 @@ export function parseTimeRange(dateStr: string, timeRange: string): string[] {
   }
 
   return timestamps;
+}
+
+/**
+ * 現在時刻より前の不要な登録データを削除する
+ */
+export async function deletePastAvailabilities(): Promise<number> {
+  try {
+    // 現在時刻を取得
+    const now = new Date();
+    const currentTimestamp = now.toISOString().slice(0, 16);
+
+    // 全ユーザーの空き時間を取得
+    const result = await dynamodb.scan({
+      TableName: TABLE_NAME,
+    });
+
+    const availabilities = result.Items as AvailabilityRecord[];
+
+    // 現在時刻より過去の不要な登録データをフィルタリング
+    const pastAvailabilities = availabilities.filter(
+      (availability) => availability.timestamp < currentTimestamp
+    );
+
+    // 削除対象がなければ0を返す
+    if (pastAvailabilities.length === 0) {
+      return 0;
+    }
+
+    // 削除処理（バッチ処理）
+    const deletePromises = pastAvailabilities.map((item) => {
+      return dynamodb.delete({
+        TableName: TABLE_NAME,
+        Key: {
+          userId: item.userId,
+          timestamp: item.timestamp,
+        },
+      });
+    });
+
+    await Promise.all(deletePromises);
+
+    // 削除したデータの件数を返す
+    return pastAvailabilities.length;
+  } catch (error) {
+    console.error('過去の登録データ削除中にエラーが発生しました:', error);
+    throw error;
+  }
 } 
