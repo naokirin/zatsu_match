@@ -1,6 +1,6 @@
 import 'aws-sdk-client-mock-jest';
 import { mockClient } from 'aws-sdk-client-mock';
-import { DynamoDBDocumentClient, QueryCommand, PutCommand, DeleteCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, QueryCommand, PutCommand, DeleteCommand, ScanCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import {
   registerAvailability,
   getUserAvailabilities,
@@ -19,21 +19,40 @@ describe('空き時間管理機能', () => {
     mockDynamoDB.on(QueryCommand).resolves({ Items: [] });
     mockDynamoDB.on(PutCommand).resolves({});
     mockDynamoDB.on(DeleteCommand).resolves({});
+    mockDynamoDB.on(GetCommand).resolves({ Item: undefined });
   });
 
   describe('registerAvailability()', () => {
-    it('空き時間を正しく登録すること', async () => {
+    it('空き時間を正しく登録し、trueを返すこと', async () => {
       // テストデータ
       const userId = 'U123456';
       const timestamp = '2023-12-15T13:00';
       const channelId = 'C123456';
 
+      // GetCommandで既存の登録がないことをモック
+      mockDynamoDB.on(GetCommand).resolves({ Item: undefined });
+
       // 関数実行
-      await registerAvailability(userId, timestamp, channelId);
+      const result = await registerAvailability(userId, timestamp, channelId);
 
       // 検証
-      expect(mockDynamoDB.calls()).toHaveLength(1);
-      expect(mockDynamoDB.call(0).args[0].input).toEqual({
+      expect(result).toBe(true);
+
+      // GetCommandが呼ばれたことを確認
+      const getCalls = mockDynamoDB.calls().filter(call => call.args[0] instanceof GetCommand);
+      expect(getCalls).toHaveLength(1);
+      expect(getCalls[0].args[0].input).toEqual({
+        TableName: process.env.DYNAMODB_TABLE,
+        Key: {
+          userId,
+          timestamp
+        }
+      });
+
+      // PutCommandが呼ばれたことを確認
+      const putCalls = mockDynamoDB.calls().filter(call => call.args[0] instanceof PutCommand);
+      expect(putCalls).toHaveLength(1);
+      expect(putCalls[0].args[0].input).toEqual({
         TableName: process.env.DYNAMODB_TABLE,
         Item: {
           userId,
@@ -42,6 +61,37 @@ describe('空き時間管理機能', () => {
           createdAt: expect.any(String)
         }
       });
+    });
+
+    it('既に登録されている場合は登録せず、falseを返すこと', async () => {
+      // テストデータ
+      const userId = 'U123456';
+      const timestamp = '2023-12-15T13:00';
+      const channelId = 'C123456';
+
+      // 既存の登録があることをモック
+      mockDynamoDB.on(GetCommand).resolves({
+        Item: {
+          userId,
+          timestamp,
+          channelId,
+          createdAt: '2023-12-01T00:00:00Z'
+        }
+      });
+
+      // 関数実行
+      const result = await registerAvailability(userId, timestamp, channelId);
+
+      // 検証
+      expect(result).toBe(false);
+
+      // GetCommandが呼ばれたことを確認
+      const getCalls = mockDynamoDB.calls().filter(call => call.args[0] instanceof GetCommand);
+      expect(getCalls).toHaveLength(1);
+
+      // PutCommandが呼ばれていないことを確認
+      const putCalls = mockDynamoDB.calls().filter(call => call.args[0] instanceof PutCommand);
+      expect(putCalls).toHaveLength(0);
     });
   });
 

@@ -21,7 +21,21 @@ export async function registerAvailability(
   userId: string,
   timestamp: string,
   channelId: string
-): Promise<void> {
+): Promise<boolean> {
+  // 既存の登録がないか確認
+  const existingAvailability = await dynamodb.get({
+    TableName: TABLE_NAME,
+    Key: {
+      userId,
+      timestamp
+    }
+  });
+
+  // 既に同じ時間に登録がある場合は登録しない
+  if (existingAvailability.Item) {
+    return false;
+  }
+
   const item: AvailabilityRecord = {
     userId,
     timestamp,
@@ -33,6 +47,8 @@ export async function registerAvailability(
     TableName: TABLE_NAME,
     Item: item
   });
+
+  return true;
 }
 
 /**

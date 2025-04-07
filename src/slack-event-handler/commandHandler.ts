@@ -83,6 +83,7 @@ async function handleRegisterCommand(
 
   const timeEntries = args.split(',').map(entry => entry.trim());
   let registeredCount = 0;
+  let duplicateCount = 0;
 
   for (const entry of timeEntries) {
     const [dateStr, timeRange] = entry.split(' ');
@@ -95,19 +96,28 @@ async function handleRegisterCommand(
       const timestamps: string[] = parseTimeRange(dateStr, timeRange);
 
       // 各時間スロットを登録
-      timestamps.forEach(async (timestamp) => {
-        await registerAvailability(userId, timestamp, channelId);
-        registeredCount++;
-      });
+      for (const timestamp of timestamps) {
+        const registered = await registerAvailability(userId, timestamp, channelId);
+        if (registered) {
+          registeredCount++;
+        } else {
+          duplicateCount++;
+        }
+      }
     } catch (error) {
       throw new CommandError(`時間の登録に失敗しました: ${(error as Error).message}`);
     }
   }
 
+  let message = `${registeredCount}件の空き時間を登録しました！ 🎯`;
+  if (duplicateCount > 0) {
+    message += `\n${duplicateCount}件の重複があり、スキップしました。`;
+  }
+
   await sendSlackEphemeralMessage(
     channelId,
     userId,
-    `${registeredCount}件の空き時間を登録しました！ 🎯`
+    message
   );
 }
 
