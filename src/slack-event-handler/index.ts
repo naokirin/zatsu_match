@@ -4,7 +4,6 @@ import { handleSlackCommand } from './commandHandler';
 import { SlackEvent, SlackCommand } from '../types/slack';
 import { SlackError, ValidationError, ConfigError } from '../utils/errors';
 import { generateTraceId, getTraceIdFromEvent } from '../utils/trace';
-import { loadConfig, validateConfig } from '../utils/config';
 
 interface SlackUrlVerification {
   type: 'url_verification';
@@ -13,8 +12,6 @@ interface SlackUrlVerification {
 
 type SlackRequestBody = SlackUrlVerification | SlackEvent | SlackCommand;
 
-let config: ReturnType<typeof loadConfig>;
-
 export async function handler(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
@@ -22,12 +19,6 @@ export async function handler(
   const context = { traceId };
 
   try {
-    // Initialize configuration
-    if (!config) {
-      config = loadConfig();
-      validateConfig(config);
-    }
-
     console.info('Received request', { ...context, event });
 
     if (!event.body) {
