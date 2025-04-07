@@ -100,7 +100,7 @@ export async function deleteAllUserAvailabilities(userId: string): Promise<void>
 
 /**
  * 日付文字列と時間範囲からタイムスタンプの配列を生成する
- * 例: parseTimeRange('2023-12-15', '13:00-15:00') => ['2023-12-15T13:00', '2023-12-15T14:00']
+ * 例: parseTimeRange('2023-12-15', '13:00-15:00') => ['2023-12-15T13:00', '2023-12-15T13:30', '2023-12-15T14:00', '2023-12-15T14:30']
  */
 export function parseTimeRange(dateStr: string, timeRange: string): string[] {
   const [startTime, endTime] = timeRange.split('-');
@@ -109,17 +109,35 @@ export function parseTimeRange(dateStr: string, timeRange: string): string[] {
     throw new Error(`Invalid time range format: ${timeRange}. Expected format: HH:MM-HH:MM`);
   }
 
-  const startHour = parseInt(startTime.split(':')[0]);
-  const endHour = parseInt(endTime.split(':')[0]);
+  // 時間と分を分解
+  const [startHourStr, startMinStr = '00'] = startTime.split(':');
+  const [endHourStr, endMinStr = '00'] = endTime.split(':');
 
-  if (isNaN(startHour) || isNaN(endHour) || startHour >= endHour) {
+  const startHour = parseInt(startHourStr);
+  const startMin = parseInt(startMinStr);
+  const endHour = parseInt(endHourStr);
+  const endMin = parseInt(endMinStr);
+
+  if (isNaN(startHour) || isNaN(endHour) || isNaN(startMin) || isNaN(endMin)) {
+    throw new Error(`Invalid time format: ${timeRange}. Expected format: HH:MM-HH:MM`);
+  }
+
+  // 開始時間と終了時間を分単位に変換して比較
+  const startTimeInMinutes = startHour * 60 + startMin;
+  const endTimeInMinutes = endHour * 60 + endMin;
+
+  if (startTimeInMinutes >= endTimeInMinutes) {
     throw new Error(`Invalid time range: ${timeRange}. End time must be later than start time.`);
   }
 
-
   const timestamps: string[] = [];
-  for (let hour = startHour; hour < endHour; hour++) {
-    timestamps.push(`${dateStr}T${hour.toString().padStart(2, '0')}:00`);
+  // 30分間隔でタイムスタンプを生成
+  for (let timeInMinutes = startTimeInMinutes; timeInMinutes < endTimeInMinutes; timeInMinutes += 30) {
+    const hour = Math.floor(timeInMinutes / 60);
+    const minute = timeInMinutes % 60;
+    timestamps.push(
+      `${dateStr}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+    );
   }
 
   return timestamps;

@@ -78,7 +78,7 @@ async function handleRegisterCommand(
 ): Promise<void> {
   // 引数のフォーマットは "2023-12-15 13:00-15:00, 2023-12-16 10:00-12:00" のような形式
   if (!args) {
-    throw new CommandError('日付と時間範囲を指定してください。例: `2023-12-15 13:00-15:00`');
+    throw new CommandError('日付と時間範囲を指定してください。例: `2023-12-15 13:00-15:00` または `2023-12-15 13:30-15:30`');
   }
 
   const timeEntries = args.split(',').map(entry => entry.trim());
@@ -89,7 +89,7 @@ async function handleRegisterCommand(
     const [dateStr, timeRange] = entry.split(' ');
 
     if (!dateStr || !timeRange) {
-      throw new CommandError(`無効な形式です: ${entry}。正しい形式は "2023-12-15 13:00-15:00" です。`);
+      throw new CommandError(`無効な形式です: ${entry}。正しい形式は "2023-12-15 13:00-15:00" です。30分間隔でも指定可能です（例: "2023-12-15 13:30-14:30"）。`);
     }
 
     try {
@@ -160,9 +160,15 @@ async function handleListCommand(
 
   for (const date in groupedByDate) {
     const times = groupedByDate[date].map(time => {
-      // 時間だけを抽出（HH:00の形式）
-      const hour = time.split(':')[0];
-      return `${hour}:00-${(parseInt(hour) + 1).toString().padStart(2, '0')}:00`;
+      // 時間と分を抽出
+      const [hour, minute] = time.split(':');
+      // 次の時間帯を計算（30分間隔の場合は30分後、そうでなければ1時間後）
+      const nextMinute = minute === '30' ? '00' : '30';
+      const nextHour = minute === '30'
+        ? (parseInt(hour) + 1).toString().padStart(2, '0')
+        : hour;
+
+      return `${hour}:${minute}-${nextHour}:${nextMinute}`;
     });
 
     message += `• ${date}: ${times.join(', ')}\n`;
@@ -178,7 +184,7 @@ async function handleDeleteCommand(
   context: LogContext
 ): Promise<void> {
   if (!args) {
-    throw new CommandError('削除する日時または "all" を指定してください。例: `2023-12-15 13:00-15:00` または `all`');
+    throw new CommandError('削除する日時または "all" を指定してください。例: `2023-12-15 13:00-15:00` または `2023-12-15 13:30-14:30` または `all`');
   }
 
   // すべての登録を削除
@@ -196,7 +202,7 @@ async function handleDeleteCommand(
   const [dateStr, timeRange] = args.trim().split(' ');
 
   if (!dateStr || !timeRange) {
-    throw new CommandError(`無効な形式です: ${args}。正しい形式は "2023-12-15 13:00-15:00" です。`);
+    throw new CommandError(`無効な形式です: ${args}。正しい形式は "2023-12-15 13:00-15:00" です。30分間隔でも指定可能です（例: "2023-12-15 13:30-14:30"）。`);
   }
 
   try {

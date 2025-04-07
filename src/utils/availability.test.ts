@@ -186,7 +186,7 @@ describe('空き時間管理機能', () => {
   });
 
   describe('parseTimeRange()', () => {
-    it('時間範囲を正しくパースすること', () => {
+    it('時間範囲を正しくパースすること（時間単位）', () => {
       const dateStr = '2023-12-15';
       const timeRange = '13:00-15:00';
 
@@ -194,7 +194,46 @@ describe('空き時間管理機能', () => {
 
       expect(result).toEqual([
         '2023-12-15T13:00',
-        '2023-12-15T14:00'
+        '2023-12-15T13:30',
+        '2023-12-15T14:00',
+        '2023-12-15T14:30'
+      ]);
+    });
+
+    it('時間範囲を正しくパースすること（30分単位）', () => {
+      const dateStr = '2023-12-15';
+      const timeRange = '13:30-15:30';
+
+      const result = parseTimeRange(dateStr, timeRange);
+
+      expect(result).toEqual([
+        '2023-12-15T13:30',
+        '2023-12-15T14:00',
+        '2023-12-15T14:30',
+        '2023-12-15T15:00'
+      ]);
+    });
+
+    it('時間範囲を正しくパースすること（1時間だけ）', () => {
+      const dateStr = '2023-12-15';
+      const timeRange = '13:00-14:00';
+
+      const result = parseTimeRange(dateStr, timeRange);
+
+      expect(result).toEqual([
+        '2023-12-15T13:00',
+        '2023-12-15T13:30'
+      ]);
+    });
+
+    it('時間範囲を正しくパースすること（30分だけ）', () => {
+      const dateStr = '2023-12-15';
+      const timeRange = '13:00-13:30';
+
+      const result = parseTimeRange(dateStr, timeRange);
+
+      expect(result).toEqual([
+        '2023-12-15T13:00'
       ]);
     });
 
@@ -223,6 +262,15 @@ describe('空き時間管理機能', () => {
       expect(() => {
         parseTimeRange(dateStr, timeRange);
       }).toThrow('Invalid time range: 13:00-13:00. End time must be later than start time.');
+    });
+
+    it('不正な時間形式でエラーをスローすること', () => {
+      const dateStr = '2023-12-15';
+      const timeRange = '13:xx-15:00';
+
+      expect(() => {
+        parseTimeRange(dateStr, timeRange);
+      }).toThrow('Invalid time format: 13:xx-15:00. Expected format: HH:MM-HH:MM');
     });
   });
 
