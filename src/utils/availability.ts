@@ -215,16 +215,10 @@ export async function deletePastAvailabilities(): Promise<number> {
 /**
  * 指定した時刻のユーザーの空き時間からマッチングを作成する
  */
-export async function createMatches(
-  targetTimestamp?: string,
-): Promise<Match[]> {
+export async function createMatches(targetTimestamp: string): Promise<Match[]> {
   try {
-    // 現在時刻から30分後の時刻を取得（デフォルト）
-    const now = new Date();
-    const thirtyMinutesLater = new Date(now.getTime() + 30 * 60000);
-    // 例: 2023-12-15T13:00 のように16文字までにスライス（秒以下を除去）
-    const timeToMatch =
-      targetTimestamp || thirtyMinutesLater.toISOString().slice(0, 16);
+    // 例: 2023-12-15T13:00
+    const timeToMatch = targetTimestamp;
 
     // 全ユーザーの空き時間を取得
     const result = await dynamodb.scan({

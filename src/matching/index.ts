@@ -6,8 +6,18 @@ import {
 
 export const handler = async (): Promise<Match[]> => {
   try {
+    // 0分か30分の一番近い時刻を取得する
+    const now = new Date();
+    const minutes = now.getMinutes();
+    const roundedMinutes =
+      minutes < 15 || (minutes >= 45 && minutes < 60) ? 0 : 30;
+    const targetDatetime = new Date(now);
+    targetDatetime.setMinutes(roundedMinutes, 0, 0);
+
     // マッチングを作成
-    const matches = await createMatches();
+    const matches = await createMatches(
+      targetDatetime.toISOString().slice(0, 16),
+    );
 
     // 過去の不要な登録データを削除
     try {

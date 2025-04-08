@@ -515,8 +515,9 @@ describe("空き時間管理機能", () => {
       mockDynamoDB.on(ScanCommand).resolves({ Items: mockItems });
 
       try {
-        // 関数実行（時刻指定なし）
-        const result = await createMatches();
+        const result = await createMatches(
+          new Date().toISOString().slice(0, 16),
+        );
 
         // 検証
         expect(result).toHaveLength(1);
