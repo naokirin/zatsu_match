@@ -16,7 +16,7 @@ import {
   getUserAvailabilities,
   parseTimeRange,
   registerAvailability,
-} from "./availability";
+} from "../../utils/availability";
 
 describe("空き時間管理機能", () => {
   const mockDynamoDB = mockClient(DynamoDBDocumentClient);

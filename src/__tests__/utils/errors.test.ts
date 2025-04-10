@@ -1,4 +1,4 @@
-import { ConfigError, SlackError, ValidationError } from "./errors";
+import { ConfigError, SlackError, ValidationError } from "../../utils/errors";
 
 describe("Custom Errors", () => {
   describe("SlackError", () => {
