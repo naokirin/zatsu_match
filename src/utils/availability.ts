@@ -92,42 +92,63 @@ export async function deleteAllUserAvailabilities(
 }
 
 export function parseTimeRange(dateStr: string, timeRange: string): string[] {
-  const [startTime, endTime] = timeRange.split("-");
+  const [startTime, endTime] = splitTimeRange(timeRange);
+  const [startTimeInMinutes, endTimeInMinutes] = convertTimeToMinutes(
+    startTime,
+    endTime
+  );
+  validateTimeRange(startTimeInMinutes, endTimeInMinutes, timeRange);
+  return generateTimestamps(dateStr, startTimeInMinutes, endTimeInMinutes);
+}
 
+function splitTimeRange(timeRange: string): [string, string] {
+  const [startTime, endTime] = timeRange.split("-");
   if (!startTime || !endTime) {
     throw new Error(
-      `Invalid time range format: ${timeRange}. Expected format: HH:MM-HH:MM`,
+      `Invalid time range format: ${timeRange}. Expected format: HH:MM-HH:MM`
     );
   }
+  return [startTime, endTime];
+}
 
-  const [startHourStr, startMinStr = "00"] = startTime.split(":");
-  const [endHourStr, endMinStr = "00"] = endTime.split(":");
+function convertTimeToMinutes(
+  startTime: string,
+  endTime: string
+): [number, number] {
+  const [startHour, startMin] = parseHourAndMinute(startTime);
+  const [endHour, endMin] = parseHourAndMinute(endTime);
+  return [startHour * 60 + startMin, endHour * 60 + endMin];
+}
 
-  const startHour = Number.parseInt(startHourStr);
-  const startMin = Number.parseInt(startMinStr);
-  const endHour = Number.parseInt(endHourStr);
-  const endMin = Number.parseInt(endMinStr);
-
-  if (
-    Number.isNaN(startHour) ||
-    Number.isNaN(endHour) ||
-    Number.isNaN(startMin) ||
-    Number.isNaN(endMin)
-  ) {
+function parseHourAndMinute(time: string): [number, number] {
+  const [hourStr, minStr = "00"] = time.split(":");
+  const hour = Number.parseInt(hourStr);
+  const minute = Number.parseInt(minStr);
+  if (Number.isNaN(hour) || Number.isNaN(minute)) {
     throw new Error(
-      `Invalid time format: ${timeRange}. Expected format: HH:MM-HH:MM`,
+      `Invalid time format: ${time}. Expected format: HH:MM`
     );
   }
+  return [hour, minute];
+}
 
-  const startTimeInMinutes = startHour * 60 + startMin;
-  const endTimeInMinutes = endHour * 60 + endMin;
-
+function validateTimeRange(
+  startTimeInMinutes: number,
+  endTimeInMinutes: number,
+  timeRange: string
+): void {
   if (startTimeInMinutes >= endTimeInMinutes) {
     throw new Error(
-      `Invalid time range: ${timeRange}. End time must be later than start time.`,
+      `Invalid time range: ${timeRange}. End time must be later than start time.`
     );
   }
+}
 
+function generateTimestamps(
+  dateStr: string,
+  startTimeInMinutes: number,
+  endTimeInMinutes: number
+): string[] {
   const timestamps: string[] = [];
   for (
     let timeInMinutes = startTimeInMinutes;
@@ -137,44 +158,19 @@ export function parseTimeRange(dateStr: string, timeRange: string): string[] {
     const hour = Math.floor(timeInMinutes / 60);
     const minute = timeInMinutes % 60;
     timestamps.push(
-      `${dateStr}T${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`,
+      `${dateStr}T${hour.toString().padStart(2, "0")}:${minute
+        .toString()
+        .padStart(2, "0")}`
     );
   }
-
   return timestamps;
 }
 
 export async function deletePastAvailabilities(): Promise<number> {
   try {
-    const now = new Date();
-    const currentTimestamp = now.toISOString().slice(0, 16);
-
-    const result = await dynamodb.scan({
-      TableName: TABLE_NAME,
-    });
-
-    const availabilities = result.Items as AvailabilityRecord[];
-
-    const pastAvailabilities = availabilities.filter(
-      (availability) => availability.timestamp < currentTimestamp,
-    );
-
-    if (pastAvailabilities.length === 0) {
-      return 0;
-    }
-
-    const deletePromises = pastAvailabilities.map((item) => {
-      return dynamodb.delete({
-        TableName: TABLE_NAME,
-        Key: {
-          userId: item.userId,
-          timestamp: item.timestamp,
-        },
-      });
-    });
-
-    await Promise.all(deletePromises);
-
+    const availabilities = await fetchAllAvailabilities();
+    const pastAvailabilities = filterPastAvailabilities(availabilities);
+    await deleteAvailabilities(pastAvailabilities);
     return pastAvailabilities.length;
   } catch (error) {
     console.error("過去の登録データ削除中にエラーが発生しました:", error);
@@ -182,60 +178,102 @@ export async function deletePastAvailabilities(): Promise<number> {
   }
 }
 
+async function fetchAllAvailabilities(): Promise<AvailabilityRecord[]> {
+  const result = await dynamodb.scan({
+    TableName: TABLE_NAME,
+  });
+  return result.Items as AvailabilityRecord[];
+}
+
+function filterPastAvailabilities(
+  availabilities: AvailabilityRecord[],
+): AvailabilityRecord[] {
+  const now = new Date();
+  const currentTimestamp = now.toISOString().slice(0, 16);
+  return availabilities.filter(
+    (availability) => availability.timestamp < currentTimestamp,
+  );
+}
+
+async function deleteAvailabilities(
+  availabilities: AvailabilityRecord[],
+): Promise<void> {
+  const deletePromises = availabilities.map((item) => {
+    return dynamodb.delete({
+      TableName: TABLE_NAME,
+      Key: {
+        userId: item.userId,
+        timestamp: item.timestamp,
+      },
+    });
+  });
+  await Promise.all(deletePromises);
+}
+
 export async function createMatches(targetTimestamp: string): Promise<Match[]> {
   try {
-    const timeToMatch = targetTimestamp;
-
-    const result = await dynamodb.scan({
-      TableName: TABLE_NAME,
-    });
-
-    const availabilities = result.Items as Availability[];
-
-    const timestampGroups = new Map<string, Match[]>();
-
-    const MAX_USERS_PER_MATCH = process.env.MAX_USERS_PER_MATCH
-      ? Number.parseInt(process.env.MAX_USERS_PER_MATCH)
-      : 5;
-
-    for (const availability of availabilities) {
-      if (availability.timestamp === timeToMatch) {
-        if (!timestampGroups.has(availability.timestamp)) {
-          timestampGroups.set(availability.timestamp, []);
-        }
-
-        const matches = timestampGroups.get(availability.timestamp) ?? [];
-
-        let matchFound = false;
-        for (const match of matches) {
-          if (match.users.length < MAX_USERS_PER_MATCH) {
-            match.users.push(availability.userId);
-            match.channelIds.push(availability.channelId);
-            matchFound = true;
-            break;
-          }
-        }
-
-        if (!matchFound) {
-          matches.push({
-            timestamp: availability.timestamp,
-            users: [availability.userId],
-            channelIds: [availability.channelId],
-          });
-        }
-      }
-    }
-
-    const allMatches: Match[] = [];
-    for (const matches of timestampGroups.values()) {
-      allMatches.push(...matches);
-    }
-
-    return allMatches;
+    const availabilities = await fetchAvailabilities(targetTimestamp);
+    const timestampGroups = groupAvailabilitiesByTimestamp(availabilities, targetTimestamp);
+    return flattenMatches(timestampGroups);
   } catch (error) {
     console.error("マッチング作成中にエラーが発生しました:", error);
     throw error;
   }
+}
+
+async function fetchAvailabilities(targetTimestamp: string): Promise<Availability[]> {
+  const result = await dynamodb.scan({
+    TableName: TABLE_NAME,
+  });
+  return result.Items as Availability[];
+}
+
+function groupAvailabilitiesByTimestamp(
+  availabilities: Availability[],
+  targetTimestamp: string
+): Map<string, Match[]> {
+  const timestampGroups = new Map<string, Match[]>();
+  const MAX_USERS_PER_MATCH = process.env.MAX_USERS_PER_MATCH
+    ? Number.parseInt(process.env.MAX_USERS_PER_MATCH)
+    : 5;
+
+  for (const availability of availabilities) {
+    if (availability.timestamp === targetTimestamp) {
+      if (!timestampGroups.has(availability.timestamp)) {
+        timestampGroups.set(availability.timestamp, []);
+      }
+
+      const matches = timestampGroups.get(availability.timestamp) ?? [];
+
+      let matchFound = false;
+      for (const match of matches) {
+        if (match.users.length < MAX_USERS_PER_MATCH) {
+          match.users.push(availability.userId);
+          match.channelIds.push(availability.channelId);
+          matchFound = true;
+          break;
+        }
+      }
+
+      if (!matchFound) {
+        matches.push({
+          timestamp: availability.timestamp,
+          users: [availability.userId],
+          channelIds: [availability.channelId],
+        });
+      }
+    }
+  }
+
+  return timestampGroups;
+}
+
+function flattenMatches(timestampGroups: Map<string, Match[]>): Match[] {
+  const allMatches: Match[] = [];
+  for (const matches of timestampGroups.values()) {
+    allMatches.push(...matches);
+  }
+  return allMatches;
 }
 
 export interface Match {

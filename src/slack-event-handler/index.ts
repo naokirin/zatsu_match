@@ -27,51 +27,46 @@ export async function handler(
     }
 
     const body = JSON.parse(event.body) as SlackRequestBody;
-
-    if (isUrlVerification(body)) {
-      console.debug("Handling URL verification", context);
-      return createSuccessResponse({ challenge: body.challenge });
-    }
-
-    if (isEventCallback(body)) {
-      console.info("Handling event callback", {
-        ...context,
-        eventType: body.event.type,
-      });
-      await handleSlackEvent(body, context);
-      return createSuccessResponse({ message: "Event processed successfully" });
-    }
-
-    if (isCommandRequest(body)) {
-      console.info("Handling command request", {
-        ...context,
-        command: body.command,
-      });
-      await handleSlackCommand(body, context);
-      return createSuccessResponse({
-        message: "Command processed successfully",
-      });
-    }
-
-    console.warn("Invalid request type", context);
-    throw new ValidationError("Invalid request type");
+    return processSlackRequest(body, context);
   } catch (error) {
     console.error("Error processing request", error as Error, {
       traceId: context.traceId,
     });
-
-    if (error instanceof ConfigError) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: "Configuration error",
-          details: (error as ConfigError).errors,
-        }),
-      };
-    }
-
     return handleError(error);
   }
+}
+
+function processSlackRequest(
+  body: SlackRequestBody,
+  context: { traceId: string },
+): APIGatewayProxyResult {
+  if (isUrlVerification(body)) {
+    console.debug("Handling URL verification", context);
+    return createSuccessResponse({ challenge: body.challenge });
+  }
+
+  if (isEventCallback(body)) {
+    console.info("Handling event callback", {
+      ...context,
+      eventType: body.event.type,
+    });
+    handleSlackEvent(body, context);
+    return createSuccessResponse({ message: "Event processed successfully" });
+  }
+
+  if (isCommandRequest(body)) {
+    console.info("Handling command request", {
+      ...context,
+      command: body.command,
+    });
+    handleSlackCommand(body, context);
+    return createSuccessResponse({
+      message: "Command processed successfully",
+    });
+  }
+
+  console.warn("Invalid request type", context);
+  throw new ValidationError("Invalid request type");
 }
 
 function isUrlVerification(
