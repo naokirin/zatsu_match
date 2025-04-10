@@ -95,7 +95,7 @@ export function parseTimeRange(dateStr: string, timeRange: string): string[] {
   const [startTime, endTime] = splitTimeRange(timeRange);
   const [startTimeInMinutes, endTimeInMinutes] = convertTimeToMinutes(
     startTime,
-    endTime
+    endTime,
   );
   validateTimeRange(startTimeInMinutes, endTimeInMinutes, timeRange);
   return generateTimestamps(dateStr, startTimeInMinutes, endTimeInMinutes);
@@ -105,7 +105,7 @@ function splitTimeRange(timeRange: string): [string, string] {
   const [startTime, endTime] = timeRange.split("-");
   if (!startTime || !endTime) {
     throw new Error(
-      `Invalid time range format: ${timeRange}. Expected format: HH:MM-HH:MM`
+      `Invalid time range format: ${timeRange}. Expected format: HH:MM-HH:MM`,
     );
   }
   return [startTime, endTime];
@@ -113,7 +113,7 @@ function splitTimeRange(timeRange: string): [string, string] {
 
 function convertTimeToMinutes(
   startTime: string,
-  endTime: string
+  endTime: string,
 ): [number, number] {
   const [startHour, startMin] = parseHourAndMinute(startTime);
   const [endHour, endMin] = parseHourAndMinute(endTime);
@@ -125,9 +125,7 @@ function parseHourAndMinute(time: string): [number, number] {
   const hour = Number.parseInt(hourStr);
   const minute = Number.parseInt(minStr);
   if (Number.isNaN(hour) || Number.isNaN(minute)) {
-    throw new Error(
-      `Invalid time format: ${time}. Expected format: HH:MM`
-    );
+    throw new Error(`Invalid time format: ${time}. Expected format: HH:MM`);
   }
   return [hour, minute];
 }
@@ -135,11 +133,11 @@ function parseHourAndMinute(time: string): [number, number] {
 function validateTimeRange(
   startTimeInMinutes: number,
   endTimeInMinutes: number,
-  timeRange: string
+  timeRange: string,
 ): void {
   if (startTimeInMinutes >= endTimeInMinutes) {
     throw new Error(
-      `Invalid time range: ${timeRange}. End time must be later than start time.`
+      `Invalid time range: ${timeRange}. End time must be later than start time.`,
     );
   }
 }
@@ -147,7 +145,7 @@ function validateTimeRange(
 function generateTimestamps(
   dateStr: string,
   startTimeInMinutes: number,
-  endTimeInMinutes: number
+  endTimeInMinutes: number,
 ): string[] {
   const timestamps: string[] = [];
   for (
@@ -160,7 +158,7 @@ function generateTimestamps(
     timestamps.push(
       `${dateStr}T${hour.toString().padStart(2, "0")}:${minute
         .toString()
-        .padStart(2, "0")}`
+        .padStart(2, "0")}`,
     );
   }
   return timestamps;
@@ -213,7 +211,10 @@ async function deleteAvailabilities(
 export async function createMatches(targetTimestamp: string): Promise<Match[]> {
   try {
     const availabilities = await fetchAvailabilities(targetTimestamp);
-    const timestampGroups = groupAvailabilitiesByTimestamp(availabilities, targetTimestamp);
+    const timestampGroups = groupAvailabilitiesByTimestamp(
+      availabilities,
+      targetTimestamp,
+    );
     return flattenMatches(timestampGroups);
   } catch (error) {
     console.error("マッチング作成中にエラーが発生しました:", error);
@@ -221,7 +222,9 @@ export async function createMatches(targetTimestamp: string): Promise<Match[]> {
   }
 }
 
-async function fetchAvailabilities(targetTimestamp: string): Promise<Availability[]> {
+async function fetchAvailabilities(
+  targetTimestamp: string,
+): Promise<Availability[]> {
   const result = await dynamodb.scan({
     TableName: TABLE_NAME,
   });
@@ -230,7 +233,7 @@ async function fetchAvailabilities(targetTimestamp: string): Promise<Availabilit
 
 function groupAvailabilitiesByTimestamp(
   availabilities: Availability[],
-  targetTimestamp: string
+  targetTimestamp: string,
 ): Map<string, Match[]> {
   const timestampGroups = new Map<string, Match[]>();
   const MAX_USERS_PER_MATCH = process.env.MAX_USERS_PER_MATCH

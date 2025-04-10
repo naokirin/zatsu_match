@@ -318,9 +318,7 @@ describe("空き時間管理機能", () => {
 
       expect(() => {
         parseTimeRange(dateStr, timeRange);
-      }).toThrow(
-        "Invalid time format: 13:xx. Expected format: HH:MM",
-      );
+      }).toThrow("Invalid time format: 13:xx. Expected format: HH:MM");
     });
   });
 
