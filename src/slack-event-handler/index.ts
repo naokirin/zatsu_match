@@ -28,13 +28,11 @@ export async function handler(
 
     const body = JSON.parse(event.body) as SlackRequestBody;
 
-    // URL Verification
     if (isUrlVerification(body)) {
       console.debug("Handling URL verification", context);
       return createSuccessResponse({ challenge: body.challenge });
     }
 
-    // Handle Slack Events
     if (isEventCallback(body)) {
       console.info("Handling event callback", {
         ...context,
@@ -44,7 +42,6 @@ export async function handler(
       return createSuccessResponse({ message: "Event processed successfully" });
     }
 
-    // Handle Slack Commands
     if (isCommandRequest(body)) {
       console.info("Handling command request", {
         ...context,

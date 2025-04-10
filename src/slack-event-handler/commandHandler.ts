@@ -86,7 +86,6 @@ async function handleRegisterCommand(
   args: string,
   context: LogContext,
 ): Promise<void> {
-  // 引数のフォーマットは "2023-12-15 13:00-15:00, 2023-12-16 10:00-12:00" のような形式
   if (!args) {
     throw new CommandError(
       "日付と時間範囲を指定してください。例: `2023-12-15 13:00-15:00` または `2023-12-15 13:30-15:30`",
@@ -109,7 +108,6 @@ async function handleRegisterCommand(
     try {
       const timestamps: string[] = parseTimeRange(dateStr, timeRange);
 
-      // 各時間スロットを登録
       for (const timestamp of timestamps) {
         const registered = await registerAvailability(
           userId,
@@ -153,12 +151,10 @@ async function handleListCommand(
     return;
   }
 
-  // タイムスタンプで並べ替え
   const sortedAvailabilities = [...availabilities].sort((a, b) =>
     a.timestamp.localeCompare(b.timestamp),
   );
 
-  // 日付ごとにグループ化
   const groupedByDate: Record<string, string[]> = {};
 
   for (const availability of sortedAvailabilities) {
@@ -171,14 +167,11 @@ async function handleListCommand(
     groupedByDate[date].push(time);
   }
 
-  // メッセージを構成
   let message = "登録されている空き時間:\n";
 
   for (const date in groupedByDate) {
     const times = groupedByDate[date].map((time) => {
-      // 時間と分を抽出
       const [hour, minute] = time.split(":");
-      // 次の時間帯を計算（30分間隔の場合は30分後、そうでなければ1時間後）
       const nextMinute = minute === "30" ? "00" : "30";
       const nextHour =
         minute === "30"
@@ -206,7 +199,6 @@ async function handleDeleteCommand(
     );
   }
 
-  // すべての登録を削除
   if (args.trim().toLowerCase() === "all") {
     await deleteAllUserAvailabilities(userId);
     await sendSlackEphemeralMessage(
@@ -217,7 +209,6 @@ async function handleDeleteCommand(
     return;
   }
 
-  // 特定の時間を削除
   const [dateStr, timeRange] = args.trim().split(" ");
 
   if (!dateStr || !timeRange) {
@@ -229,7 +220,6 @@ async function handleDeleteCommand(
   try {
     const timestamps = parseTimeRange(dateStr, timeRange);
 
-    // 各時間スロットを削除
     for (const timestamp of timestamps) {
       await deleteAvailability(userId, timestamp);
     }
