@@ -11,3 +11,21 @@
 
 * 処理に関わるコメントはしない
 * 処理の意図に関するコメントのみ行う
+
+## インフラアーキテクチャ
+
+* Slackbot API: AWS Lambda (TypeScript)
+* データストア: Amazon DynamoDB
+* マッチング処理: AWS Step Functions + Lambda
+* 通知: Amazon EventBridge + SNS
+* Slackハドル起動: AWS Lambda
+
+## アプリケーションアーキテクチャ
+
+* テストコードは `__tests__` ディレクトリ以下に置く
+* 各Lambdaのスクリプトは、`lambdas` ディレクトリ以下にLambdaごとにディレクトリを作成して置く
+* シンプルな型定義は `types` ディレクトリ以下に置く
+* ビジネスロジックは `domains` ディレクトリ以下に置く
+* IO処理は `repositories` ディレクトリ以下に置く
+* 外部サービスアクセス処理は `services` ディレクトリ以下に置く
+* サポート関数などは `utils` に置く
