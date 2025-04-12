@@ -1,4 +1,4 @@
-import type { SlackEvent } from "../types/slack";
+import type { SlackEvent } from "../../types/slack";
 interface LogContext {
   traceId: string;
   [key: string]: unknown;

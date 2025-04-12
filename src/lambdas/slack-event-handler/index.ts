@@ -1,7 +1,7 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import type { SlackCommand, SlackEvent } from "../types/slack";
-import { ConfigError, SlackError, ValidationError } from "../utils/errors";
-import { generateTraceId, getTraceIdFromEvent } from "../utils/trace";
+import type { SlackCommand, SlackEvent } from "../../types/slack";
+import { ConfigError, SlackError, ValidationError } from "../../utils/errors";
+import { generateTraceId, getTraceIdFromEvent } from "../../utils/trace";
 import { handleSlackCommand } from "./commandHandler";
 import { handleSlackEvent } from "./eventHandler";
 

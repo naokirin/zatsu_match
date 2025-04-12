@@ -24,7 +24,7 @@ jest.mock("../../utils/availability", () => {
   };
 });
 
-import { handleSlackCommand } from "../../slack-event-handler/commandHandler";
+import { handleSlackCommand } from "../../lambdas/slack-event-handler/commandHandler";
 import type { SlackCommand } from "../../types/slack";
 import { sendSlackEphemeralMessage } from "../../utils/slack";
 

@@ -2,7 +2,7 @@ import {
   type Match,
   createMatches,
   deletePastAvailabilities,
-} from "../utils/availability";
+} from "../../utils/availability";
 
 export const handler = async (): Promise<Match[]> => {
   try {

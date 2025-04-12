@@ -21,7 +21,7 @@ import type {
   APIGatewayEventRequestContext,
   APIGatewayProxyEvent,
 } from "aws-lambda";
-import { handler } from "../../slack-event-handler";
+import { handler } from "../../lambdas/slack-event-handler";
 
 describe("Slack Event Handler", () => {
   const originalEnv = process.env;

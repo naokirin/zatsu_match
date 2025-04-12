@@ -1,13 +1,13 @@
-import type { SlackCommand } from "../types/slack";
+import type { SlackCommand } from "../../types/slack";
 import {
   deleteAllUserAvailabilities,
   deleteAvailability,
   getUserAvailabilities,
   parseTimeRange,
   registerAvailability,
-} from "../utils/availability";
-import { CommandError } from "../utils/errors";
-import { sendSlackEphemeralMessage } from "../utils/slack";
+} from "../../utils/availability";
+import { CommandError } from "../../utils/errors";
+import { sendSlackEphemeralMessage } from "../../utils/slack";
 
 interface LogContext {
   traceId: string;

@@ -12,7 +12,7 @@ jest.mock("../../slack-event-handler/commandHandler", () => {
   };
 });
 
-import { handleSlackEvent } from "../../slack-event-handler/eventHandler";
+import { handleSlackEvent } from "../../lambdas/slack-event-handler/eventHandler";
 import type { SlackEvent } from "../../types/slack";
 
 describe("Slack Event Handler", () => {
