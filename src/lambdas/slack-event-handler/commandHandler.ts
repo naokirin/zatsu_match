@@ -7,7 +7,7 @@ import {
   registerAvailability,
 } from "../../utils/availability";
 import { CommandError } from "../../utils/errors";
-import { sendSlackEphemeralMessage } from "../../utils/slack";
+import { sendSlackEphemeralMessage } from "../../services/slack";
 
 interface LogContext {
   traceId: string;
