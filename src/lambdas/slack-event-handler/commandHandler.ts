@@ -3,9 +3,9 @@ import {
   deleteAllUserAvailabilities,
   deleteAvailability,
   getUserAvailabilities,
-  parseTimeRange,
   registerAvailability,
-} from "../../utils/availability";
+} from "../../repositories/availability";
+import { parseTimeRange } from "../../utils/availability";
 import { CommandError } from "../../utils/errors";
 import { sendSlackEphemeralMessage } from "../../services/slack";
 

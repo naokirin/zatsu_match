@@ -6,10 +6,10 @@ const mockSlackFunctions = {
 const mockHandleSlackCommand = jest.fn();
 
 // モックをインポートより前に設定
-jest.mock("../../utils/slack", () => mockSlackFunctions);
-jest.mock("../../slack-event-handler/commandHandler", () => {
+jest.mock("../../services/slack", () => mockSlackFunctions);
+jest.mock("../../lambdas/slack-event-handler/commandHandler", () => {
   const originalModule = jest.requireActual(
-    "../../slack-event-handler/commandHandler",
+    "../../lambdas/slack-event-handler/commandHandler",
   );
   return {
     ...originalModule,

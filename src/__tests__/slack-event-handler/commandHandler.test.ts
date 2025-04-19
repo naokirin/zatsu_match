@@ -4,20 +4,18 @@ const mockSlackFunctions = {
 };
 
 const mockRegisterAvailability = jest.fn();
-const mockParseTimeRange = jest.fn();
 const mockGetUserAvailabilities = jest.fn();
 const mockDeleteAvailability = jest.fn();
 const mockDeleteAllUserAvailabilities = jest.fn();
 
 // モックをインポートより前に設定
-jest.mock("../../utils/slack", () => mockSlackFunctions);
-jest.mock("../../utils/availability", () => {
-  const originalModule = jest.requireActual("../../utils/availability");
+jest.mock("../../services/slack", () => mockSlackFunctions);
+jest.mock("../../repositories/availability", () => {
+  const originalModule = jest.requireActual("../../repositories/availability");
 
   return {
     ...originalModule,
     registerAvailability: mockRegisterAvailability,
-    parseTimeRange: mockParseTimeRange,
     getUserAvailabilities: mockGetUserAvailabilities,
     deleteAvailability: mockDeleteAvailability,
     deleteAllUserAvailabilities: mockDeleteAllUserAvailabilities,
@@ -26,7 +24,7 @@ jest.mock("../../utils/availability", () => {
 
 import { handleSlackCommand } from "../../lambdas/slack-event-handler/commandHandler";
 import type { SlackCommand } from "../../types/slack";
-import { sendSlackEphemeralMessage } from "../../utils/slack";
+import { sendSlackEphemeralMessage } from "../../services/slack";
 
 describe("Slack Command Handler", () => {
   beforeEach(() => {
@@ -44,18 +42,8 @@ describe("Slack Command Handler", () => {
         response_url: "https://test.com",
       };
 
-      // 1時間間隔のmockを返す
-      mockParseTimeRange.mockReturnValue([
-        "2024-01-02T10:00",
-        "2024-01-02T10:30",
-      ]);
-
       await handleSlackCommand(mockCommand, { traceId: "test-trace-id" });
 
-      expect(mockParseTimeRange).toHaveBeenCalledWith(
-        "2024-01-02",
-        "10:00-11:00",
-      );
       expect(mockRegisterAvailability).toHaveBeenCalledTimes(2);
       expect(mockRegisterAvailability).toHaveBeenCalledWith(
         "test-user",
@@ -78,19 +66,8 @@ describe("Slack Command Handler", () => {
         response_url: "https://test.com",
       };
 
-      // 30分間隔のmockを返す
-      mockParseTimeRange.mockReturnValue([
-        "2024-01-02T10:30",
-        "2024-01-02T11:00",
-        "2024-01-02T11:30",
-      ]);
-
       await handleSlackCommand(mockCommand, { traceId: "test-trace-id" });
 
-      expect(mockParseTimeRange).toHaveBeenCalledWith(
-        "2024-01-02",
-        "10:30-12:00",
-      );
       expect(mockRegisterAvailability).toHaveBeenCalledTimes(3);
       expect(mockRegisterAvailability).toHaveBeenCalledWith(
         "test-user",
@@ -138,18 +115,8 @@ describe("Slack Command Handler", () => {
         response_url: "https://test.com",
       };
 
-      // 30分間隔のmockを返す
-      mockParseTimeRange.mockReturnValue([
-        "2024-01-02T10:30",
-        "2024-01-02T11:00",
-      ]);
-
       await handleSlackCommand(mockCommand, { traceId: "test-trace-id" });
 
-      expect(mockParseTimeRange).toHaveBeenCalledWith(
-        "2024-01-02",
-        "10:30-11:30",
-      );
       expect(mockDeleteAvailability).toHaveBeenCalledTimes(2);
       expect(mockDeleteAvailability).toHaveBeenCalledWith(
         "test-user",

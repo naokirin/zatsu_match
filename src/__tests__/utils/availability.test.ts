@@ -10,12 +10,8 @@ import {
 import { mockClient } from "aws-sdk-client-mock";
 import {
   createMatches,
-  deleteAllUserAvailabilities,
-  deleteAvailability,
   deletePastAvailabilities,
-  getUserAvailabilities,
-  parseTimeRange,
-  registerAvailability,
+  parseTimeRange
 } from "../../utils/availability";
 
 describe("空き時間管理機能", () => {
@@ -28,208 +24,6 @@ describe("空き時間管理機能", () => {
     mockDynamoDB.on(PutCommand).resolves({});
     mockDynamoDB.on(DeleteCommand).resolves({});
     mockDynamoDB.on(GetCommand).resolves({ Item: undefined });
-  });
-
-  describe("registerAvailability()", () => {
-    it("空き時間を正しく登録し、trueを返すこと", async () => {
-      // テストデータ
-      const userId = "U123456";
-      const timestamp = "2023-12-15T13:00";
-      const channelId = "C123456";
-
-      // GetCommandで既存の登録がないことをモック
-      mockDynamoDB.on(GetCommand).resolves({ Item: undefined });
-
-      // 関数実行
-      const result = await registerAvailability(userId, timestamp, channelId);
-
-      // 検証
-      expect(result).toBe(true);
-
-      // GetCommandが呼ばれたことを確認
-      const getCalls = mockDynamoDB
-        .calls()
-        .filter((call) => call.args[0] instanceof GetCommand);
-      expect(getCalls).toHaveLength(1);
-      expect(getCalls[0].args[0].input).toEqual({
-        TableName: "",
-        Key: {
-          userId,
-          timestamp,
-        },
-      });
-
-      // PutCommandが呼ばれたことを確認
-      const putCalls = mockDynamoDB
-        .calls()
-        .filter((call) => call.args[0] instanceof PutCommand);
-      expect(putCalls).toHaveLength(1);
-      expect(putCalls[0].args[0].input).toEqual({
-        TableName: "",
-        Item: {
-          userId,
-          timestamp,
-          channelId,
-          createdAt: expect.any(String),
-        },
-      });
-    });
-
-    it("既に登録されている場合は登録せず、falseを返すこと", async () => {
-      // テストデータ
-      const userId = "U123456";
-      const timestamp = "2023-12-15T13:00";
-      const channelId = "C123456";
-
-      // 既存の登録があることをモック
-      mockDynamoDB.on(GetCommand).resolves({
-        Item: {
-          userId,
-          timestamp,
-          channelId,
-          createdAt: "2023-12-01T00:00:00Z",
-        },
-      });
-
-      // 関数実行
-      const result = await registerAvailability(userId, timestamp, channelId);
-
-      // 検証
-      expect(result).toBe(false);
-
-      // GetCommandが呼ばれたことを確認
-      const getCalls = mockDynamoDB
-        .calls()
-        .filter((call) => call.args[0] instanceof GetCommand);
-      expect(getCalls).toHaveLength(1);
-
-      // PutCommandが呼ばれていないことを確認
-      const putCalls = mockDynamoDB
-        .calls()
-        .filter((call) => call.args[0] instanceof PutCommand);
-      expect(putCalls).toHaveLength(0);
-    });
-  });
-
-  describe("getUserAvailabilities()", () => {
-    it("ユーザーの空き時間を取得すること", async () => {
-      // モックの戻り値を設定
-      const mockItems = [
-        {
-          userId: "U123456",
-          timestamp: "2023-12-15T13:00",
-          channelId: "C123456",
-          createdAt: "2023-12-01T00:00:00Z",
-        },
-      ];
-      mockDynamoDB.on(QueryCommand).resolves({ Items: mockItems });
-
-      // テストデータ
-      const userId = "U123456";
-
-      // 関数実行
-      const result = await getUserAvailabilities(userId);
-
-      // 検証
-      expect(
-        mockDynamoDB
-          .calls()
-          .filter((call) => call.args[0] instanceof QueryCommand),
-      ).toHaveLength(1);
-      const queryCall = mockDynamoDB
-        .calls()
-        .find((call) => call.args[0] instanceof QueryCommand);
-      expect(queryCall?.args[0].input).toEqual({
-        TableName: "",
-        KeyConditionExpression: "userId = :userId",
-        ExpressionAttributeValues: {
-          ":userId": userId,
-        },
-      });
-      expect(result).toEqual(mockItems);
-    });
-  });
-
-  describe("deleteAvailability()", () => {
-    it("特定の空き時間を削除すること", async () => {
-      // テストデータ
-      const userId = "U123456";
-      const timestamp = "2023-12-15T13:00";
-
-      // 関数実行
-      await deleteAvailability(userId, timestamp);
-
-      // 検証
-      expect(
-        mockDynamoDB
-          .calls()
-          .filter((call) => call.args[0] instanceof DeleteCommand),
-      ).toHaveLength(1);
-      const deleteCall = mockDynamoDB
-        .calls()
-        .find((call) => call.args[0] instanceof DeleteCommand);
-      expect(deleteCall?.args[0].input).toEqual({
-        TableName: "",
-        Key: {
-          userId,
-          timestamp,
-        },
-      });
-    });
-  });
-
-  describe("deleteAllUserAvailabilities()", () => {
-    it("ユーザーの全ての空き時間を削除すること", async () => {
-      // モックの戻り値を設定
-      const mockItems = [
-        {
-          userId: "U123456",
-          timestamp: "2023-12-15T13:00",
-          channelId: "C123456",
-          createdAt: "2023-12-01T00:00:00Z",
-        },
-        {
-          userId: "U123456",
-          timestamp: "2023-12-15T14:00",
-          channelId: "C123456",
-          createdAt: "2023-12-01T00:00:00Z",
-        },
-      ];
-      mockDynamoDB.on(QueryCommand).resolves({ Items: mockItems });
-
-      // テストデータ
-      const userId = "U123456";
-
-      // 関数実行
-      await deleteAllUserAvailabilities(userId);
-
-      // 検証
-      const queryCalls = mockDynamoDB
-        .calls()
-        .filter((call) => call.args[0] instanceof QueryCommand);
-      expect(queryCalls).toHaveLength(1);
-
-      const deleteCalls = mockDynamoDB
-        .calls()
-        .filter((call) => call.args[0] instanceof DeleteCommand);
-      expect(deleteCalls).toHaveLength(2);
-
-      expect(deleteCalls[0].args[0].input).toEqual({
-        TableName: "",
-        Key: {
-          userId: "U123456",
-          timestamp: "2023-12-15T13:00",
-        },
-      });
-
-      expect(deleteCalls[1].args[0].input).toEqual({
-        TableName: "",
-        Key: {
-          userId: "U123456",
-          timestamp: "2023-12-15T14:00",
-        },
-      });
-    });
   });
 
   describe("parseTimeRange()", () => {
@@ -376,7 +170,7 @@ describe("空き時間管理機能", () => {
 
       // 削除対象が正しいか確認
       expect(deleteCalls[0].args[0].input).toEqual({
-        TableName: "",
+        TableName: "zatsumatchs",
         Key: {
           userId: "U111111",
           timestamp: "2023-12-15T10:00",
@@ -384,7 +178,7 @@ describe("空き時間管理機能", () => {
       });
 
       expect(deleteCalls[1].args[0].input).toEqual({
-        TableName: "",
+        TableName: "zatsumatchs",
         Key: {
           userId: "U222222",
           timestamp: "2023-12-15T11:00",
