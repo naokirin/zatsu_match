@@ -23,8 +23,8 @@ jest.mock("../../repositories/availability", () => {
 });
 
 import { handleSlackCommand } from "../../lambdas/slack-event-handler/commandHandler";
-import type { SlackCommand } from "../../types/slack";
 import { sendSlackEphemeralMessage } from "../../services/slack";
+import type { SlackCommand } from "../../types/slack";
 
 describe("Slack Command Handler", () => {
   beforeEach(() => {
@@ -35,7 +35,7 @@ describe("Slack Command Handler", () => {
   describe("handleSlackCommand", () => {
     it("should handle /zatsu_match command", async () => {
       jest.useFakeTimers();
-      const mockDate = new Date('2024-01-01T00:00:00');
+      const mockDate = new Date("2024-01-01T00:00:00");
       jest.setSystemTime(mockDate);
       const mockCommand: SlackCommand = {
         command: "/zatsu_match",
@@ -62,7 +62,7 @@ describe("Slack Command Handler", () => {
 
     it("should handle 30 minute interval registration", async () => {
       jest.useFakeTimers();
-      const mockDate = new Date('2024-01-01T00:00:00');
+      const mockDate = new Date("2024-01-01T00:00:00");
       jest.setSystemTime(mockDate);
       const mockCommand: SlackCommand = {
         command: "/zatsu_match",

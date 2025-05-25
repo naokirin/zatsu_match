@@ -1,9 +1,9 @@
 import {
-  Availability,
-  AvailabilityRecord,
+  type Availability,
+  type AvailabilityRecord,
+  deleteAvailabilities,
   fetchAllAvailabilities,
   fetchAvailabilities,
-  deleteAvailabilities,
 } from "../repositories/availability";
 
 export function parseTimeRange(dateStr: string, timeRange: string): string[] {

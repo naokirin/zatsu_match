@@ -14,6 +14,6 @@ module.exports = {
         outputPath: "jest_html_reporters.html",
         includeConsoleLog: true,
       },
-    ]
-  ]
+    ],
+  ],
 };

@@ -91,7 +91,9 @@ export async function fetchAvailabilities(
   return result.Items as Availability[];
 }
 
-export async function deleteAllUserAvailabilities(userId: string): Promise<void> {
+export async function deleteAllUserAvailabilities(
+  userId: string,
+): Promise<void> {
   const availabilities = await getUserAvailabilities(userId);
 
   const deletePromises = availabilities.map((availability) => {
@@ -107,7 +109,10 @@ export async function deleteAllUserAvailabilities(userId: string): Promise<void>
   await Promise.all(deletePromises);
 }
 
-export async function deleteAvailability(userId: string, timestamp: string): Promise<void> {
+export async function deleteAvailability(
+  userId: string,
+  timestamp: string,
+): Promise<void> {
   await dynamodb.delete({
     TableName: TABLE_NAME,
     Key: {

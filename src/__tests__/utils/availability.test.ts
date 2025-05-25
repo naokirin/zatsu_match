@@ -12,7 +12,7 @@ import {
   createMatches,
   deletePastAvailabilities,
   isWithinTwoWeeks,
-  parseTimeRange
+  parseTimeRange,
 } from "../../utils/availability";
 
 describe("空き時間管理機能", () => {
@@ -348,7 +348,9 @@ describe("空き時間管理機能", () => {
       withinTwoWeeks.setDate(today.getDate() + 13);
 
       expect(isWithinTwoWeeks(oneHourLater.toISOString())).toBe(true);
-      expect(isWithinTwoWeeks(withinTwoWeeks.toISOString().split("T")[0])).toBe(true);
+      expect(isWithinTwoWeeks(withinTwoWeeks.toISOString().split("T")[0])).toBe(
+        true,
+      );
     });
 
     it("2週間を超える日付を拒否する", () => {
@@ -356,14 +358,18 @@ describe("空き時間管理機能", () => {
       const beyondTwoWeeks = new Date();
       beyondTwoWeeks.setDate(today.getDate() + 15);
 
-      expect(isWithinTwoWeeks(beyondTwoWeeks.toISOString().split("T")[0])).toBe(false);
+      expect(isWithinTwoWeeks(beyondTwoWeeks.toISOString().split("T")[0])).toBe(
+        false,
+      );
     });
 
     it("過去の日付を拒否する", () => {
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - 1);
 
-      expect(isWithinTwoWeeks(pastDate.toISOString().split("T")[0])).toBe(false);
+      expect(isWithinTwoWeeks(pastDate.toISOString().split("T")[0])).toBe(
+        false,
+      );
     });
   });
 });
