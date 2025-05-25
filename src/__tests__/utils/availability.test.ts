@@ -342,10 +342,12 @@ describe("空き時間管理機能", () => {
   describe("isWithinTwoWeeks", () => {
     it("現在の日付を含む2週間以内の日付を許可する", () => {
       const today = new Date();
+      const oneHourLater = new Date();
+      oneHourLater.setHours(today.getHours() + 1);
       const withinTwoWeeks = new Date();
       withinTwoWeeks.setDate(today.getDate() + 13);
 
-      expect(isWithinTwoWeeks(today.toISOString().split("T")[0])).toBe(true);
+      expect(isWithinTwoWeeks(oneHourLater.toISOString())).toBe(true);
       expect(isWithinTwoWeeks(withinTwoWeeks.toISOString().split("T")[0])).toBe(true);
     });
 

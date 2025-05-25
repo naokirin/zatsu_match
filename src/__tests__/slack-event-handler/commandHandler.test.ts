@@ -34,6 +34,9 @@ describe("Slack Command Handler", () => {
 
   describe("handleSlackCommand", () => {
     it("should handle /zatsu_match command", async () => {
+      jest.useFakeTimers();
+      const mockDate = new Date('2024-01-01T00:00:00');
+      jest.setSystemTime(mockDate);
       const mockCommand: SlackCommand = {
         command: "/zatsu_match",
         user_id: "test-user",
@@ -58,6 +61,9 @@ describe("Slack Command Handler", () => {
     });
 
     it("should handle 30 minute interval registration", async () => {
+      jest.useFakeTimers();
+      const mockDate = new Date('2024-01-01T00:00:00');
+      jest.setSystemTime(mockDate);
       const mockCommand: SlackCommand = {
         command: "/zatsu_match",
         user_id: "test-user",
