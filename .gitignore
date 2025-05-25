@@ -30,3 +30,7 @@ build/
 
 # AWS SAM
 .aws-sam/
+
+# jest html report
+jest_html_reporters.html
+jest-html-reporters-attach/
