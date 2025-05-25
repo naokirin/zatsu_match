@@ -5,7 +5,7 @@ import {
   getUserAvailabilities,
   registerAvailability,
 } from "../../repositories/availability";
-import { parseTimeRange } from "../../utils/availability";
+import { parseTimeRange, isWithinTwoWeeks } from "../../utils/availability";
 import { CommandError } from "../../utils/errors";
 import { sendSlackEphemeralMessage } from "../../services/slack";
 
@@ -102,6 +102,12 @@ async function handleRegisterCommand(
     if (!dateStr || !timeRange) {
       throw new CommandError(
         `無効な形式です: ${entry}。正しい形式は "2023-12-15 13:00-15:00" です。30分間隔でも指定可能です（例: "2023-12-15 13:30-14:30"）。`,
+      );
+    }
+
+    if (!isWithinTwoWeeks(dateStr)) {
+      throw new CommandError(
+        `日付が2週間先を超えています: ${dateStr}。2週間以内の日付を指定してください。`,
       );
     }
 

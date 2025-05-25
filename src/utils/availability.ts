@@ -168,3 +168,12 @@ export interface Match {
   users: string[];
   channelIds: string[];
 }
+
+export function isWithinTwoWeeks(dateStr: string): boolean {
+  const inputDate = new Date(dateStr);
+  const today = new Date();
+  const twoWeeksLater = new Date();
+  twoWeeksLater.setDate(today.getDate() + 14);
+
+  return inputDate >= today && inputDate <= twoWeeksLater;
+}
