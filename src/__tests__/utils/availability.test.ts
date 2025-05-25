@@ -170,7 +170,7 @@ describe("空き時間管理機能", () => {
 
       // 削除対象が正しいか確認
       expect(deleteCalls[0].args[0].input).toEqual({
-        TableName: "zatsumatchs",
+        TableName: "zatsumaches",
         Key: {
           userId: "U111111",
           timestamp: "2023-12-15T10:00",
@@ -178,7 +178,7 @@ describe("空き時間管理機能", () => {
       });
 
       expect(deleteCalls[1].args[0].input).toEqual({
-        TableName: "zatsumatchs",
+        TableName: "zatsumaches",
         Key: {
           userId: "U222222",
           timestamp: "2023-12-15T11:00",

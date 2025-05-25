@@ -2,7 +2,7 @@ import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 
 const dynamodb: DynamoDBDocument = DynamoDBDocument.from(new DynamoDB());
-const TABLE_NAME = process.env.DYNAMODB_TABLE ?? "zatsumatchs";
+const TABLE_NAME = process.env.DYNAMODB_TABLE ?? "zatsumaches";
 
 export interface Availability {
   userId: string;

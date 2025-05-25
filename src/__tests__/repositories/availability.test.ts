@@ -48,7 +48,7 @@ describe("空き時間管理機能", () => {
         .filter((call) => call.args[0] instanceof GetCommand);
       expect(getCalls).toHaveLength(1);
       expect(getCalls[0].args[0].input).toEqual({
-        TableName: "zatsumatchs",
+        TableName: "zatsumaches",
         Key: {
           userId,
           timestamp,
@@ -61,7 +61,7 @@ describe("空き時間管理機能", () => {
         .filter((call) => call.args[0] instanceof PutCommand);
       expect(putCalls).toHaveLength(1);
       expect(putCalls[0].args[0].input).toEqual({
-        TableName: "zatsumatchs",
+        TableName: "zatsumaches",
         Item: {
           userId,
           timestamp,
@@ -136,7 +136,7 @@ describe("空き時間管理機能", () => {
         .calls()
         .find((call) => call.args[0] instanceof QueryCommand);
       expect(queryCall?.args[0].input).toEqual({
-        TableName: "zatsumatchs",
+        TableName: "zatsumaches",
         KeyConditionExpression: "userId = :userId",
         ExpressionAttributeValues: {
           ":userId": userId,
